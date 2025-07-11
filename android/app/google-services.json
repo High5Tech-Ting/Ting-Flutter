@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "385133722078",
+    "project_id": "ting-5b91d",
+    "storage_bucket": "ting-5b91d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385133722078:android:108ba0a3fe6e706e27454f",
+        "android_client_info": {
+          "package_name": "com.example.ting"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "385133722078-rtsk1p5huhempii27vhuffgkpg181unh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJMm7eHjXCoDgseUcGMxmsVqR-Hgm7so0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "385133722078-rtsk1p5huhempii27vhuffgkpg181unh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
