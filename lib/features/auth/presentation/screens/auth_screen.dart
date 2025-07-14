@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:ting/auth/presentation/widgets/custom_clip_path.dart';
-import 'package:ting/auth/presentation/widgets/password_input.dart';
+import 'package:ting/features/auth/data/auth_repository.dart';
+import 'package:ting/features/auth/presentation/widgets/custom_clip_path.dart';
+import 'package:ting/features/auth/presentation/widgets/password_input.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:ting/shared/widgets/primary_button.dart';
+import 'package:ting/shared/widgets/text_input.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,6 +17,50 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  void _signIn() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Please fill in all fields')));
+      return;
+    }
+    try {
+      var user = await AuthRepository.signIn(email: email, password: password);
+
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign in failed. Please try again.')),
+        );
+        return;
+      }
+    } on FirebaseAuthException catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid credentials. Please try again.')),
+      );
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    var email = _emailController.text;
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter your email address.')),
+      );
+      return;
+    }
+
+    try {
+      await AuthRepository.resetPassword(context, email);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send password reset email.')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -59,26 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     SizedBox(height: 32),
 
-                    TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.inputBorderRadius,
-                          ),
-                          borderSide: BorderSide(color: AppTheme.inputBorder),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.inputBorderRadius,
-                          ),
-                          borderSide: BorderSide(
-                            color: AppTheme.focusedInputBorder,
-                          ),
-                        ),
-                      ),
-                    ),
+                    TextInput(controller: _emailController, labelText: 'Email'),
 
                     SizedBox(height: 16),
 
@@ -90,22 +118,22 @@ class _AuthScreenState extends State<AuthScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         InkWell(
-                          onTap: () {},
+                          onTap: () async {
+                            await _resetPassword();
+                          },
                           child: Text(
                             "Forgot your password?",
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
+
+                            style: AppTheme.linkText.copyWith(
                               decoration: TextDecoration.underline,
-                              decorationColor: Colors.black54,
+                              decorationThickness: 1.5,
                             ),
                           ),
                         ),
 
                         PrimaryButton(
-                          onPressed: () {},
+                          onPressed: _signIn,
                           child: SizedBox(
-                            width: 64,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

@@ -36,31 +36,31 @@ class AppTheme {
 
   // Typography
   static const TextStyle headingLarge = TextStyle(
-    fontFamily: "Inter",
+    fontFamily: "NunitoSans",
     fontSize: 28.0,
-    fontWeight: FontWeight.bold,
+    fontVariations: [FontVariation('wght', 700)],
     color: textPrimary,
   );
 
   static const TextStyle bodyLarge = TextStyle(
-    fontFamily: "Inter",
+    fontFamily: "NunitoSans",
     fontSize: 16.0,
-    fontWeight: FontWeight.w500,
+    fontVariations: [FontVariation('wght', 500)],
     color: textPrimary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontFamily: "Inter",
-    fontSize: 14.0,
-    fontWeight: FontWeight.normal,
+    fontFamily: "NunitoSans",
+    fontSize: 16.0,
+    fontVariations: [FontVariation('wght', 400)],
     color: textPrimary,
   );
 
   static const TextStyle linkText = TextStyle(
-    fontFamily: "Inter",
-    fontSize: 14.0,
-    fontWeight: FontWeight.normal,
-    color: textLink,
+    fontFamily: "NunitoSans",
+    fontSize: 16.0,
+    fontVariations: [FontVariation('wght', 400)],
+    color: textSecondary,
   );
 
   // Theme data
@@ -110,14 +110,13 @@ class AppTheme {
           backgroundColor: buttonBackground,
           foregroundColor: buttonText,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          textStyle: bodyMedium,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: textLink,
-          padding: EdgeInsets.zero,
-          minimumSize: const Size(0, 0),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: bodyMedium,
         ),
       ),
     );
