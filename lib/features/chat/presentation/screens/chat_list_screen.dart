@@ -93,103 +93,161 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore.collection('users').snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                final users = snapshot.data!.docs.where((doc) => doc.id != currentUserId).toList();
-                final searchText = controller.text.toLowerCase();
-                final filteredUsers = users.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final email = (data['email'] ?? '').toString().toLowerCase();
-                  return email.contains(searchText);
-                }).toList();
-                return ListView.builder(
-                  itemCount: filteredUsers.length,
-                  itemBuilder: (context, index) {
-                    final doc = filteredUsers[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    final uid = doc.id;
-                    final email = data['email'] ?? 'No Email';
-                    final lastSeen = data['lastSeen'] as Timestamp?;
-                    final isOnline = data['online'] ?? false;
-                    final avatarUrl = data['avatarUrl'] ?? 'https://avatar.iran.liara.run/public';
-                    return StreamBuilder<DocumentSnapshot>(
-                      stream: _firestore
-                          .collection('conversations')
-                          .doc(([currentUserId, uid]..sort()).join('_'))
-                          .snapshots(),
-                      builder: (context, convSnapshot) {
-                        String lastMessage = '';
-                        String messageTime = '';
-                        int unreadCount = 0;
-                        bool isTyping = false;
-                        if (convSnapshot.hasData && convSnapshot.data!.exists) {
-                          final convData = convSnapshot.data!.data() as Map<String, dynamic>;
-                          lastMessage = convData['lastMessage'] ?? '';
-                          final lastMessageTime = convData['lastMessageTime'] as Timestamp?;
-                          if (lastMessageTime != null) {
-                            messageTime = formatTimestamp(lastMessageTime);
-                          }
-                          final unreadMessages = convData['unreadMessages'] as Map<String, dynamic>?;
-                          if (unreadMessages != null) {
-                            unreadCount = unreadMessages[currentUserId] ?? 0;
-                          }
-                          final typingUsers = convData['typingUsers'] as Map<String, dynamic>?;
-                          if (typingUsers != null) {
-                            isTyping = typingUsers[uid] == true;
-                          }
-                        }
-                        return ChatListItem(
-                          userName: email,
-                          lastMessage: isTyping
-                              ? 'typing...'
-                              : lastMessage.isNotEmpty
-                                  ? lastMessage
-                                  : isOnline
-                                      ? 'Online'
-                                      : lastSeen != null
-                                          ? 'Last seen: ${formatTimestamp(lastSeen)}'
-                                          : '',
-                          time: messageTime,
-                          avatarUrl: avatarUrl,
-                          newMessages: unreadCount,
-                          isOnline: isOnline,
-                          onTap: () async {
-                            if (currentUserId.isEmpty || uid.isEmpty) {
-                              print('User ID is empty!');
-                              return;
-                            }
-                            final convId = await _getOrCreateConversation(currentUserId, uid);
-                            // Reset unread counter when entering the chat
-                            if (unreadCount > 0) {
-                              await _firestore.collection('conversations').doc(convId).set({
-                                'unreadMessages': {
-                                  currentUserId: 0
-                                }
-                              }, SetOptions(merge: true));
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ChatScreen(
-                                  userName: email,
-                                  lastActiveTime: lastSeen != null ? formatTimestamp(lastSeen) : '',
-                                  avatarUrl: avatarUrl,
-                                  isOnline: isOnline,
-                                  conversationId: convId,
-                                  otherUserId: uid, // <-- Make sure this is set!
+            child: controller.text.isEmpty
+                ? StreamBuilder<QuerySnapshot>(
+                    stream: _firestore
+                        .collection('conversations')
+                        .where('participants', arrayContains: currentUserId)
+                        .snapshots(),
+                    builder: (context, convSnapshot) {
+                      if (!convSnapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final convDocs = convSnapshot.data!.docs;
+                      if (convDocs.isEmpty) {
+                        return const Center(child: Text('No chats yet.'));
+                      }
+                      final filteredConvDocs = convDocs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return (data['lastMessage'] != null && (data['lastMessage'] as String).isNotEmpty);
+                      }).toList();
+
+                      final otherUserIds = filteredConvDocs.map((doc) {
+                        final participants = (doc['participants'] as List).cast<String>();
+                        return participants.firstWhere((id) => id != currentUserId, orElse: () => '');
+                      }).where((id) => id.isNotEmpty).toSet().toList();
+                      return ListView.builder(
+                        itemCount: otherUserIds.length,
+                        itemBuilder: (context, index) {
+                          final otherUserId = otherUserIds[index];
+                          return StreamBuilder<DocumentSnapshot>(
+                            stream: _firestore.collection('users').doc(otherUserId).snapshots(),
+                            builder: (context, userSnapshot) {
+                              if (!userSnapshot.hasData || !userSnapshot.data!.exists) return const SizedBox.shrink();
+                              final data = userSnapshot.data!.data() as Map<String, dynamic>;
+                              final email = data['email'] ?? 'No Email';
+                              final lastSeen = data['lastSeen'] as Timestamp?;
+                              final isOnline = data['online'] ?? false;
+                              final avatarUrl = data['avatarUrl'] ?? 'https://avatar.iran.liara.run/public';
+                              // Find the conversation doc for this user
+                              final convDoc = convDocs.firstWhere((doc) => (doc['participants'] as List).contains(otherUserId));
+                              String lastMessage = '';
+                              String messageTime = '';
+                              int unreadCount = 0;
+                              bool isTyping = false;
+                              final convData = convDoc.data() as Map<String, dynamic>;
+                              lastMessage = convData['lastMessage'] ?? '';
+                              final lastMessageTime = convData['lastMessageTime'] as Timestamp?;
+                              if (lastMessageTime != null) {
+                                messageTime = formatTimestamp(lastMessageTime);
+                              }
+                              final unreadMessages = convData['unreadMessages'] as Map<String, dynamic>?;
+                              if (unreadMessages != null) {
+                                unreadCount = unreadMessages[currentUserId] ?? 0;
+                              }
+                              final typingUsers = convData['typingUsers'] as Map<String, dynamic>?;
+                              if (typingUsers != null) {
+                                isTyping = typingUsers[otherUserId] == true;
+                              }
+                              return ChatListItem(
+                                userName: email,
+                                lastMessage: isTyping
+                                    ? 'typing...'
+                                    : lastMessage.isNotEmpty
+                                        ? lastMessage
+                                        : isOnline
+                                            ? 'Online'
+                                            : lastSeen != null
+                                                ? 'Last seen: ${formatTimestamp(lastSeen)}'
+                                                : '',
+                                time: messageTime,
+                                avatarUrl: avatarUrl,
+                                newMessages: unreadCount,
+                                isOnline: isOnline,
+                                onTap: () async {
+                                  final convId = convDoc.id;
+                                  if (unreadCount > 0) {
+                                    await _firestore.collection('conversations').doc(convId).set({
+                                      'unreadMessages': {
+                                        currentUserId: 0
+                                      }
+                                    }, SetOptions(merge: true));
+                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ChatScreen(
+                                        userName: email,
+                                        lastActiveTime: lastSeen != null ? formatTimestamp(lastSeen) : '',
+                                        avatarUrl: avatarUrl,
+                                        isOnline: isOnline,
+                                        conversationId: convId,
+                                        otherUserId: otherUserId,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  )
+                : StreamBuilder<QuerySnapshot>(
+                    stream: _firestore.collection('users').snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final users = snapshot.data!.docs.where((doc) => doc.id != currentUserId).toList();
+                      final searchText = controller.text.toLowerCase();
+                      final filteredUsers = users.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final email = (data['email'] ?? '').toString().toLowerCase();
+                        return email.contains(searchText);
+                      }).toList();
+                      if (filteredUsers.isEmpty) {
+                        return const Center(child: Text('No users found.'));
+                      }
+                      return ListView.builder(
+                        itemCount: filteredUsers.length,
+                        itemBuilder: (context, index) {
+                          final doc = filteredUsers[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          final uid = doc.id;
+                          final email = data['email'] ?? 'No Email';
+                          final lastSeen = data['lastSeen'] as Timestamp?;
+                          final isOnline = data['online'] ?? false;
+                          final avatarUrl = data['avatarUrl'] ?? 'https://avatar.iran.liara.run/public';
+                          return ChatListItem(
+                            userName: email,
+                            lastMessage: isOnline
+                                ? 'Online'
+                                : lastSeen != null
+                                    ? 'Last seen: ${formatTimestamp(lastSeen)}'
+                                    : '',
+                            time: '',
+                            avatarUrl: avatarUrl,
+                            newMessages: 0,
+                            isOnline: isOnline,
+                            onTap: () async {
+                              final convId = await _getOrCreateConversation(currentUserId, uid);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatScreen(
+                                    userName: email,
+                                    lastActiveTime: lastSeen != null ? formatTimestamp(lastSeen) : '',
+                                    avatarUrl: avatarUrl,
+                                    isOnline: isOnline,
+                                    conversationId: convId,
+                                    otherUserId: uid,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
           ),
         ],
       ),
