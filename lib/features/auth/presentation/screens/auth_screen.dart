@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
-import 'package:ting/features/auth/presentation/widgets/custom_clip_path.dart';
+import 'package:ting/shared/widgets/custom_clip_path.dart';
 import 'package:ting/features/auth/presentation/widgets/password_input.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:ting/shared/widgets/primary_button.dart';

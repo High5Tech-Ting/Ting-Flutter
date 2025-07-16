@@ -6,6 +6,7 @@ class AppTheme {
     0xFF2196F3,
   ); // Blue color for primary actions
   static const Color secondary = Color(0xFF03DAC6);
+  static const Color primary100 = Color(0xFFEBF4FF);
 
   // Text colors
   static const Color textPrimary = Color(0xFF000000);
@@ -24,9 +25,6 @@ class AppTheme {
   // Button colors
   static const Color buttonBackground = Color(0xFF2196F3);
   static const Color buttonText = Color(0xFFFFFFFF);
-
-  // Navigation colors
-  static const Color navigationIndicator = Color(0xFFD1E8FA);
 
   // Error and validation colors
   static const Color error = Color(0xFFB00020);
@@ -121,10 +119,11 @@ class AppTheme {
           textStyle: bodyMedium,
         ),
       ),
+      appBarTheme: AppBarTheme(titleTextStyle: headingLarge),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        indicatorColor: navigationIndicator,
-        overlayColor: WidgetStatePropertyAll(navigationIndicator),
+        indicatorColor: primary100,
+        overlayColor: WidgetStatePropertyAll(primary100),
         labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
           (states) => bodyMedium.copyWith(
             fontSize: 14.0,
