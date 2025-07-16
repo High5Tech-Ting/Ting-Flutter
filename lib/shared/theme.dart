@@ -25,6 +25,9 @@ class AppTheme {
   static const Color buttonBackground = Color(0xFF2196F3);
   static const Color buttonText = Color(0xFFFFFFFF);
 
+  // Navigation colors
+  static const Color navigationIndicator = Color(0xFFD1E8FA);
+
   // Error and validation colors
   static const Color error = Color(0xFFB00020);
   static const Color success = Color(0xFF4CAF50);
@@ -72,7 +75,6 @@ class AppTheme {
         primary: primary,
         secondary: secondary,
         error: error,
-        background: background,
         surface: surface,
       ),
       scaffoldBackgroundColor: background,
@@ -117,6 +119,29 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: textLink,
           textStyle: bodyMedium,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surface,
+        indicatorColor: navigationIndicator,
+        overlayColor: WidgetStatePropertyAll(navigationIndicator),
+        labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
+          (states) => bodyMedium.copyWith(
+            fontSize: 14.0,
+            fontVariations: states.contains(WidgetState.selected)
+                ? [FontVariation('wght', 700)]
+                : [FontVariation('wght', 400)],
+            color: states.contains(WidgetState.selected)
+                ? primary
+                : Colors.black,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? primary
+                : Colors.black,
+          ),
         ),
       ),
     );
