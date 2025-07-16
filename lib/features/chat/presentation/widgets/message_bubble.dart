@@ -5,12 +5,14 @@ class MessageBubble extends StatelessWidget {
   final String message;
   final bool isSender;
   final String time;
+  final Widget? statusIcon;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.isSender,
     required this.time,
+    this.statusIcon,
   });
 
   @override
@@ -59,12 +61,21 @@ class MessageBubble extends StatelessWidget {
                     const SizedBox(height: 4),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: Text(
-                        time,
-                        style: TextStyle(
-                          color: isSender ? Colors.white : Colors.black54,
-                          fontSize: 12,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            time,
+                            style: TextStyle(
+                              color: isSender ? Colors.white : Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (statusIcon != null) ...[
+                            const SizedBox(width: 4),
+                            statusIcon!,
+                          ],
+                        ],
                       ),
                     ),
                   ],
