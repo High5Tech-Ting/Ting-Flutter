@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
-import 'package:ting/features/home/presentation/screens/home_screen.dart';
 import 'package:ting/shared/theme.dart';
+import 'package:ting/shared/widgets/main_navigation.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({super.key});
@@ -32,7 +32,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         ).showSnackBar(SnackBar(content: Text('Email verified successfully!')));
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
           (route) => false,
         );
       }
