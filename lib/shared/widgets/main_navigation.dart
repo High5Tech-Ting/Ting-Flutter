@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ting/features/chat/presentation/screens/chat_list_screen.dart';
+import 'package:ting/features/forum/presentation/screens/forum_screen.dart';
 import 'package:ting/features/profile/presentation/screens/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -14,7 +15,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final PageController _pageController = PageController();
   final List<Widget> _pages = [
     const ChatListScreen(),
-    Scaffold(body: Center(child: Text('Forum Screen'))),
+    const ForumScreen(),
     Scaffold(body: Center(child: Text('Groups Screen'))),
     const ProfileScreen(),
   ];

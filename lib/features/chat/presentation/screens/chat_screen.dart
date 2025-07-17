@@ -190,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leadingWidth: 32,
+        leadingWidth: 32.0,
         backgroundColor: AppTheme.primary100,
         title: Row(
           children: [
