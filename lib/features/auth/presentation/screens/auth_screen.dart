@@ -95,9 +95,11 @@ class _AuthScreenState extends State<AuthScreen> {
                       text: TextSpan(
                         style: Theme.of(context).textTheme.headlineLarge,
                         children: [
-                          const TextSpan(text: "Stay connected. Stay in the "),
+                          const TextSpan(
+                            text: "In tune, Informed, In sync, That's ",
+                          ),
                           TextSpan(
-                            text: "loop",
+                            text: "Ting",
                             style: TextStyle(color: AppTheme.primary),
                           ),
                         ],
