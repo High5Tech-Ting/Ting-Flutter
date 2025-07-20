@@ -7,6 +7,8 @@ class Message {
   final String text;
   final Timestamp timestamp;
   final String status;
+  final String? fileUrl; // New: URL for image, video, or document
+  final String type; // New: 'text', 'image', 'video', 'document'
 
   Message({
     required this.messageId,
@@ -14,7 +16,9 @@ class Message {
     required this.receiverId,
     required this.text,
     required this.timestamp,
-    this.status = 'unknown'
+    this.status = 'unknown',
+    this.fileUrl,
+    this.type = 'text',
   });
 
   factory Message.fromMap(Map<String, dynamic> data) {
@@ -26,7 +30,9 @@ class Message {
         timestamp: data['timestamp'] is Timestamp
             ? data['timestamp'] as Timestamp
             : Timestamp.now(),
-        status: data['status'] as String? ?? 'unknown'
+        status: data['status'] as String? ?? 'unknown',
+        fileUrl: data['fileUrl'] as String?,
+        type: data['type'] as String? ?? 'text',
     );
   }
 
@@ -37,7 +43,9 @@ class Message {
       'receiverId': receiverId,
       'text': text,
       'timestamp': timestamp,
-      'status': status
+      'status': status,
+      'fileUrl': fileUrl,
+      'type': type,
     };
   }
 }
