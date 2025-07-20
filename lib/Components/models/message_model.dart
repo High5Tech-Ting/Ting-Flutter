@@ -7,8 +7,10 @@ class Message {
   final String text;
   final Timestamp timestamp;
   final String status;
-  final String? fileUrl; // New: URL for image, video, or document
-  final String type; // New: 'text', 'image', 'video', 'document'
+  final String? fileUrl; 
+  final String type; 
+  final List<String> deletedFor;
+  final bool isDeletedForEveryone;
 
   Message({
     required this.messageId,
@@ -19,6 +21,8 @@ class Message {
     this.status = 'unknown',
     this.fileUrl,
     this.type = 'text',
+    this.deletedFor = const [],
+    this.isDeletedForEveryone = false,
   });
 
   factory Message.fromMap(Map<String, dynamic> data) {
@@ -33,6 +37,8 @@ class Message {
         status: data['status'] as String? ?? 'unknown',
         fileUrl: data['fileUrl'] as String?,
         type: data['type'] as String? ?? 'text',
+        deletedFor: List<String>.from(data['deletedFor'] ?? []),
+        isDeletedForEveryone: data['isDeletedForEveryone'] ?? false,
     );
   }
 
@@ -46,6 +52,8 @@ class Message {
       'status': status,
       'fileUrl': fileUrl,
       'type': type,
+      'deletedFor': deletedFor,
+      'isDeletedForEveryone': isDeletedForEveryone,
     };
   }
 }

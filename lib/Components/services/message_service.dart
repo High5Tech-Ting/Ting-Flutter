@@ -26,3 +26,25 @@ Stream<List<Message>> getMessagesStream(String userId) {
       .toList());
 }
 
+Future<void> deleteMessageForMe(String conversationId, String messageId, String userId) async {
+  await FirebaseFirestore.instance
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('messages')
+      .doc(messageId)
+      .update({
+        'deletedFor': FieldValue.arrayUnion([userId])
+      });
+}
+
+Future<void> deleteMessageForEveryone(String conversationId, String messageId) async {
+  await FirebaseFirestore.instance
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('messages')
+      .doc(messageId)
+      .update({
+        'isDeletedForEveryone': true
+      });
+}
+

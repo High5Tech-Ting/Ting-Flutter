@@ -41,7 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
 
-  String get currentUserId => _auth.currentUser!.uid;
+  String get currentUserId => _auth.currentUser?.uid ?? '';
   String get otherUserId => widget.otherUserId ?? '';
   String get conversationId => widget.conversationId ?? ([currentUserId, otherUserId]..sort()).join('_');
 
@@ -140,15 +140,18 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('messages')
         .doc();
     await messageRef.set({
-      'id': messageRef.id,
+      'messageId': messageRef.id, // instead of 'id'
       'senderId': senderId,
-      'body': messageText,
+      'receiverId': receiverId,
+      'text': messageText,        // instead of 'body'
       'timestamp': FieldValue.serverTimestamp(),
       'status': 'sent',
       'delivered': false,
       'deliveredAt': null,
       'read': false,
       'readAt': null,
+      'deletedFor': [],
+      'isDeletedForEveryone': false,
     });
     DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
     Map<String, dynamic> unreadMessages = {};
@@ -219,7 +222,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget getMessageStatusIcon(Map<String, dynamic> messageData) {
     final isMe = messageData['senderId'] == currentUserId;
     if (!isMe) return const SizedBox.shrink();
-    // final status = messageData['status'] ?? 'sent';
     if (messageData['read'] == true) {
       return const Icon(Icons.done_all, size: 16, color: Colors.white);
     } else if (messageData['delivered'] == true) {
@@ -249,9 +251,10 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('messages')
         .doc();
     await messageRef.set({
-      'id': messageRef.id,
+      'messageId': messageRef.id, // instead of 'id'
       'senderId': senderId,
-      'body': '',
+      'receiverId': receiverId,
+      'text': '', // For file messages, body is empty
       'timestamp': FieldValue.serverTimestamp(),
       'status': 'sent',
       'delivered': false,
@@ -261,6 +264,8 @@ class _ChatScreenState extends State<ChatScreen> {
       'fileUrl': fileUrl,
       'type': type,
       'fileName': fileName ?? '',
+      'deletedFor': [],
+      'isDeletedForEveryone': false,
     });
     // Update conversation doc as in sendMessage
     DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
@@ -407,35 +412,72 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                       lastDayLabel = dayLabel;
                     }
-                    var senderId = messageData['senderId'] ?? '';
-                    var text = messageData['body'] ?? '';
+                    final senderId = messageData['senderId']?.toString() ?? '';
+                    final text = messageData['text']?.toString() ?? '';
                     final isMe = senderId == currentUserId;
-                    final fileUrl = messageData['fileUrl'] as String?;
-                    final type = messageData['type'] as String? ?? 'text';
-                    final fileName = messageData['fileName'] as String?;
+                    final fileUrl = messageData['fileUrl']?.toString();
+                    final type = messageData['type']?.toString() ?? 'text';
+                    final fileName = messageData['fileName']?.toString();
+                    final bool isDeletedForEveryone = messageData['isDeletedForEveryone'] == true;
+                    final List<dynamic> rawDeletedFor = messageData['deletedFor'] ?? [];
+                    final List<String> deletedFor = rawDeletedFor.whereType<String>().toList();
+
                     if (!isMe && messageData['read'] == false) {
                       _firestore
                           .collection('conversations')
                           .doc(conversationId)
                           .collection('messages')
-                          .doc(messageData['id'])
+                          .doc(messageData['messageId'])
                           .update({
                         'read': true,
                         'readAt': FieldValue.serverTimestamp(),
                         'status': 'read'
                       });
                     }
-                    messageWidgets.add(
-                      MessageBubble(
-                        message: text,
-                        isSender: isMe,
-                        time: formatTime(timestamp),
-                        statusIcon: getMessageStatusIcon(messageData),
-                        fileUrl: fileUrl,
-                        type: type,
-                        fileName: fileName,
-                      ),
-                    );
+
+                    if (isDeletedForEveryone) {
+                      messageWidgets.add(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "This message was deleted",
+                                  style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700]),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else if (deletedFor.contains(currentUserId)) {
+                      // Do nothing, the message will be skipped
+                    } else {
+                      messageWidgets.add(
+                        MessageBubble(
+                          message: text,
+                          isSender: isMe,
+                          time: formatTime(timestamp),
+                          statusIcon: getMessageStatusIcon(messageData),
+                          fileUrl: fileUrl,
+                          type: type,
+                          fileName: fileName,
+                          conversationId: conversationId,
+                          messageId: messageData['messageId'],
+                          senderId: senderId,
+                          currentUserId: currentUserId,
+                          isDeletedForEveryone: isDeletedForEveryone,
+                          deletedFor: deletedFor,
+                        ),
+                      );
+                    }
                   }
                   return ListView(
                     controller: _scrollController,

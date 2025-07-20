@@ -41,17 +41,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final messageDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
     final diff = today.difference(messageDay).inDays;
     if (diff == 0) {
-      // Today: show time with AM/PM
       return DateFormat('h:mm a').format(dateTime);
     } else if (diff == 1) {
-      // Yesterday
       return 'Yesterday';
     } else if (dateTime.year == now.year) {
-      // This year: show month (short) and day
       return DateFormat('MMM d').format(dateTime);
 
     } else {
-      // Previous years: show month (short), day, and year
       return DateFormat('MMM d, yyyy').format(dateTime);
     }
   }
