@@ -219,7 +219,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget getMessageStatusIcon(Map<String, dynamic> messageData) {
     final isMe = messageData['senderId'] == currentUserId;
     if (!isMe) return const SizedBox.shrink();
-    final status = messageData['status'] ?? 'sent';
+    // final status = messageData['status'] ?? 'sent';
     if (messageData['read'] == true) {
       return const Icon(Icons.done_all, size: 16, color: Colors.white);
     } else if (messageData['delivered'] == true) {
@@ -336,8 +336,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     }
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
+                    if (!snapshot.hasData || snapshot.data == null) {
+                      return const Text('Loading...', style: TextStyle(color: Colors.grey, fontSize: 14));
                     }
                     final userData = snapshot.data!.data() as Map<String, dynamic>?;
                     final isOnline = userData?['online'] ?? false;

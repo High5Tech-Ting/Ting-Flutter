@@ -49,16 +49,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
     } else if (dateTime.year == now.year) {
       // This year: show month (short) and day
       return DateFormat('MMM d').format(dateTime);
+
     } else {
       // Previous years: show month (short), day, and year
       return DateFormat('MMM d, yyyy').format(dateTime);
     }
   }
 
-  Future<String> _getOrCreateConversation(String userId1, String userId2) async {
+  Future<String> _getOrCreateConversation(
+    String userId1,
+    String userId2,
+  ) async {
     final sortedIds = [userId1, userId2]..sort();
     final conversationId = '${sortedIds[0]}_${sortedIds[1]}';
-    final conversationRef = _firestore.collection('conversations').doc(conversationId);
+    final conversationRef = _firestore
+        .collection('conversations')
+        .doc(conversationId);
     final doc = await conversationRef.get();
     if (!doc.exists) {
       await conversationRef.set({
@@ -109,50 +115,96 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         .where('participants', arrayContains: currentUserId)
                         .snapshots(),
                     builder: (context, convSnapshot) {
-                      if (!convSnapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      if (!convSnapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
                       final convDocs = convSnapshot.data!.docs;
                       if (convDocs.isEmpty) {
                         return const Center(child: Text('No chats yet.'));
                       }
                       final filteredConvDocs = convDocs.where((doc) {
                         final data = doc.data() as Map<String, dynamic>;
-                        return (data['lastMessage'] != null && (data['lastMessage'] as String).isNotEmpty);
+                        return (data['lastMessage'] != null &&
+                            (data['lastMessage'] as String).isNotEmpty);
                       }).toList();
 
-                      final otherUserIds = filteredConvDocs.map((doc) {
-                        final participants = (doc['participants'] as List).cast<String>();
-                        return participants.firstWhere((id) => id != currentUserId, orElse: () => '');
-                      }).where((id) => id.isNotEmpty).toSet().toList();
+                      // TODO: Temp Sort conversations by lastMessageTime
+                      filteredConvDocs.sort((a, b) {
+                        final aData = a.data() as Map<String, dynamic>;
+                        final bData = b.data() as Map<String, dynamic>;
+                        final aTime = aData['lastMessageTime'] as Timestamp?;
+                        final bTime = bData['lastMessageTime'] as Timestamp?;
+
+                        if (aTime == null && bTime == null) return 0;
+                        if (aTime == null) return 1;
+                        if (bTime == null) return -1;
+
+                        return bTime.compareTo(aTime);
+                      });
+
+                      final otherUserIds = filteredConvDocs
+                          .map((doc) {
+                            final participants = (doc['participants'] as List)
+                                .cast<String>();
+                            return participants.firstWhere(
+                              (id) => id != currentUserId,
+                              orElse: () => '',
+                            );
+                          })
+                          .where((id) => id.isNotEmpty)
+                          .toSet()
+                          .toList();
                       return ListView.builder(
                         itemCount: otherUserIds.length,
                         itemBuilder: (context, index) {
                           final otherUserId = otherUserIds[index];
                           return StreamBuilder<DocumentSnapshot>(
-                            stream: _firestore.collection('users').doc(otherUserId).snapshots(),
+                            stream: _firestore
+                                .collection('users')
+                                .doc(otherUserId)
+                                .snapshots(),
                             builder: (context, userSnapshot) {
-                              if (!userSnapshot.hasData || !userSnapshot.data!.exists) return const SizedBox.shrink();
-                              final data = userSnapshot.data!.data() as Map<String, dynamic>;
+                              if (!userSnapshot.hasData ||
+                                  !userSnapshot.data!.exists) {
+                                return const SizedBox.shrink();
+                              }
+                              final data =
+                                  userSnapshot.data!.data()
+                                      as Map<String, dynamic>;
                               final email = data['email'] ?? 'No Email';
                               final lastSeen = data['lastSeen'] as Timestamp?;
                               final isOnline = data['online'] ?? false;
-                              final avatarUrl = data['avatarUrl'] ?? 'https://avatar.iran.liara.run/public';
+                              final avatarUrl =
+                                  data['avatarUrl'] ??
+                                  "https://avatar.iran.liara.run/public/?username=${data['uid']}";
                               // Find the conversation doc for this user
-                              final convDoc = convDocs.firstWhere((doc) => (doc['participants'] as List).contains(otherUserId));
+                              final convDoc = convDocs.firstWhere(
+                                (doc) => (doc['participants'] as List).contains(
+                                  otherUserId,
+                                ),
+                              );
                               String lastMessage = '';
                               String messageTime = '';
                               int unreadCount = 0;
                               bool isTyping = false;
-                              final convData = convDoc.data() as Map<String, dynamic>;
+                              final convData =
+                                  convDoc.data() as Map<String, dynamic>;
                               lastMessage = convData['lastMessage'] ?? '';
-                              final lastMessageTime = convData['lastMessageTime'] as Timestamp?;
+                              final lastMessageTime =
+                                  convData['lastMessageTime'] as Timestamp?;
                               if (lastMessageTime != null) {
                                 messageTime = formatTimestamp(lastMessageTime);
                               }
-                              final unreadMessages = convData['unreadMessages'] as Map<String, dynamic>?;
+                              final unreadMessages =
+                                  convData['unreadMessages']
+                                      as Map<String, dynamic>?;
                               if (unreadMessages != null) {
-                                unreadCount = unreadMessages[currentUserId] ?? 0;
+                                unreadCount =
+                                    unreadMessages[currentUserId] ?? 0;
                               }
-                              final typingUsers = convData['typingUsers'] as Map<String, dynamic>?;
+                              final typingUsers =
+                                  convData['typingUsers']
+                                      as Map<String, dynamic>?;
                               if (typingUsers != null) {
                                 isTyping = typingUsers[otherUserId] == true;
                               }
@@ -161,12 +213,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 lastMessage: isTyping
                                     ? 'typing...'
                                     : lastMessage.isNotEmpty
-                                        ? lastMessage
-                                        : isOnline
-                                            ? 'Online'
-                                            : lastSeen != null
-                                                ? 'Last seen: ${formatTimestamp(lastSeen)}'
-                                                : '',
+                                    ? lastMessage
+                                    : isOnline
+                                    ? 'Online'
+                                    : lastSeen != null
+                                    ? 'Last seen: ${formatTimestamp(lastSeen)}'
+                                    : '',
                                 time: messageTime,
                                 avatarUrl: avatarUrl,
                                 newMessages: unreadCount,
@@ -174,18 +226,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 onTap: () async {
                                   final convId = convDoc.id;
                                   if (unreadCount > 0) {
-                                    await _firestore.collection('conversations').doc(convId).set({
-                                      'unreadMessages': {
-                                        currentUserId: 0
-                                      }
-                                    }, SetOptions(merge: true));
+                                    await _firestore
+                                        .collection('conversations')
+                                        .doc(convId)
+                                        .set({
+                                          'unreadMessages': {currentUserId: 0},
+                                        }, SetOptions(merge: true));
                                   }
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ChatScreen(
                                         userName: email,
-                                        lastActiveTime: lastSeen != null ? formatTimestamp(lastSeen) : '',
+                                        lastActiveTime: lastSeen != null
+                                            ? formatTimestamp(lastSeen)
+                                            : '',
                                         avatarUrl: avatarUrl,
                                         isOnline: isOnline,
                                         conversationId: convId,
@@ -204,12 +259,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 : StreamBuilder<QuerySnapshot>(
                     stream: _firestore.collection('users').snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                      final users = snapshot.data!.docs.where((doc) => doc.id != currentUserId).toList();
+                      if (!snapshot.hasData)
+                        return const Center(child: CircularProgressIndicator());
+                      final users = snapshot.data!.docs
+                          .where((doc) => doc.id != currentUserId)
+                          .toList();
                       final searchText = controller.text.toLowerCase();
                       final filteredUsers = users.where((doc) {
                         final data = doc.data() as Map<String, dynamic>;
-                        final email = (data['email'] ?? '').toString().toLowerCase();
+                        final email = (data['email'] ?? '')
+                            .toString()
+                            .toLowerCase();
                         return email.contains(searchText);
                       }).toList();
                       if (filteredUsers.isEmpty) {
@@ -224,26 +284,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           final email = data['email'] ?? 'No Email';
                           final lastSeen = data['lastSeen'] as Timestamp?;
                           final isOnline = data['online'] ?? false;
-                          final avatarUrl = data['avatarUrl'] ?? 'https://avatar.iran.liara.run/public';
+                          final avatarUrl =
+                              data['avatarUrl'] ??
+                              "https://avatar.iran.liara.run/public/?username=$uid";
                           return ChatListItem(
                             userName: email,
                             lastMessage: isOnline
                                 ? 'Online'
                                 : lastSeen != null
-                                    ? 'Last seen: ${formatTimestamp(lastSeen)}'
-                                    : '',
+                                ? 'Last seen: ${formatTimestamp(lastSeen)}'
+                                : '',
                             time: '',
                             avatarUrl: avatarUrl,
                             newMessages: 0,
                             isOnline: isOnline,
                             onTap: () async {
-                              final convId = await _getOrCreateConversation(currentUserId, uid);
+                              final convId = await _getOrCreateConversation(
+                                currentUserId,
+                                uid,
+                              );
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => ChatScreen(
                                     userName: email,
-                                    lastActiveTime: lastSeen != null ? formatTimestamp(lastSeen) : '',
+                                    lastActiveTime: lastSeen != null
+                                        ? formatTimestamp(lastSeen)
+                                        : '',
                                     avatarUrl: avatarUrl,
                                     isOnline: isOnline,
                                     conversationId: convId,
