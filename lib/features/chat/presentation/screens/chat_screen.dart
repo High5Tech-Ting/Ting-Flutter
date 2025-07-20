@@ -16,7 +16,6 @@ class ChatScreen extends StatefulWidget {
   final String lastActiveTime;
   final String avatarUrl;
   final bool isOnline;
-  // Add conversation id and participants for real chat
   final String? conversationId;
   final String? otherUserId;
 
@@ -44,6 +43,10 @@ class _ChatScreenState extends State<ChatScreen> {
   String get currentUserId => _auth.currentUser?.uid ?? '';
   String get otherUserId => widget.otherUserId ?? '';
   String get conversationId => widget.conversationId ?? ([currentUserId, otherUserId]..sort()).join('_');
+
+  String? _replyToMessageId;
+  String? _replyToText;
+  String? _replyToSenderId;
 
   @override
   void initState() {
@@ -73,7 +76,6 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }, SetOptions(merge: true));
     
-    // Simplified query to avoid complex index requirements
     QuerySnapshot unreadMessages = await _firestore
         .collection('conversations')
         .doc(conversationId)
@@ -84,7 +86,6 @@ class _ChatScreenState extends State<ChatScreen> {
     WriteBatch batch = _firestore.batch();
     for (var doc in unreadMessages.docs) {
       final messageData = doc.data() as Map<String, dynamic>?;
-      // Only mark messages as read if they're from other users
       if (messageData?['senderId'] != currentUserId) {
         batch.update(doc.reference, {'read': true, 'readAt': FieldValue.serverTimestamp()});
       }
@@ -140,10 +141,10 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('messages')
         .doc();
     await messageRef.set({
-      'messageId': messageRef.id, // instead of 'id'
+      'messageId': messageRef.id, 
       'senderId': senderId,
       'receiverId': receiverId,
-      'text': messageText,        // instead of 'body'
+      'text': messageText,        
       'timestamp': FieldValue.serverTimestamp(),
       'status': 'sent',
       'delivered': false,
@@ -152,6 +153,9 @@ class _ChatScreenState extends State<ChatScreen> {
       'readAt': null,
       'deletedFor': [],
       'isDeletedForEveryone': false,
+      'replyToMessageId': _replyToMessageId,
+      'replyToText': _replyToText,
+      'replyToSenderId': _replyToSenderId,
     });
     DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
     Map<String, dynamic> unreadMessages = {};
@@ -182,6 +186,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
+    });
+    setState(() {
+      _replyToMessageId = null;
+      _replyToText = null;
+      _replyToSenderId = null;
     });
   }
 
@@ -251,10 +260,10 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('messages')
         .doc();
     await messageRef.set({
-      'messageId': messageRef.id, // instead of 'id'
+      'messageId': messageRef.id, 
       'senderId': senderId,
       'receiverId': receiverId,
-      'text': '', // For file messages, body is empty
+      'text': '', 
       'timestamp': FieldValue.serverTimestamp(),
       'status': 'sent',
       'delivered': false,
@@ -266,8 +275,10 @@ class _ChatScreenState extends State<ChatScreen> {
       'fileName': fileName ?? '',
       'deletedFor': [],
       'isDeletedForEveryone': false,
+      'replyToMessageId': _replyToMessageId,
+      'replyToText': _replyToText,
+      'replyToSenderId': _replyToSenderId,
     });
-    // Update conversation doc as in sendMessage
     DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
     Map<String, dynamic> unreadMessages = {};
     if (convDoc.exists) {
@@ -285,6 +296,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }, SetOptions(merge: true));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
+    });
+    setState(() {
+      _replyToMessageId = null;
+      _replyToText = null;
+      _replyToSenderId = null;
     });
   }
 
@@ -458,7 +474,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       );
                     } else if (deletedFor.contains(currentUserId)) {
-                      // Do nothing, the message will be skipped
                     } else {
                       messageWidgets.add(
                         MessageBubble(
@@ -475,6 +490,16 @@ class _ChatScreenState extends State<ChatScreen> {
                           currentUserId: currentUserId,
                           isDeletedForEveryone: isDeletedForEveryone,
                           deletedFor: deletedFor,
+                          replyToMessageId: messageData['replyToMessageId'],
+                          replyToText: messageData['replyToText'],
+                          replyToSenderId: messageData['replyToSenderId'],
+                          onReply: (replyToMessageId, replyToText, replyToSenderId) {
+                            setState(() {
+                              _replyToMessageId = replyToMessageId;
+                              _replyToText = replyToText;
+                              _replyToSenderId = replyToSenderId;
+                            });
+                          },
                         ),
                       );
                     }
@@ -487,54 +512,26 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          // Typing indicator
-          StreamBuilder<DocumentSnapshot>(
-            stream: _firestore.collection('conversations').doc(conversationId).snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null) {
-                return const SizedBox.shrink();
-              }
-              final data = snapshot.data!.data() as Map<String, dynamic>?;
-              if (data == null) return const SizedBox.shrink();
-              final typingUsers = data['typingUsers'] as Map<String, dynamic>? ?? {};
-              bool isOtherUserTyping = false;
-              for (var entry in typingUsers.entries) {
-                if (entry.key != currentUserId && entry.value == true) {
-                  isOtherUserTyping = true;
-                  break;
-                }
-              }
-              return isOtherUserTyping
-                  ? Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            height: 20,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: List.generate(
-                                3,
-                                (index) => Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Text("typing...", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink();
-            },
-          ),
+          if (_replyToText != null)
+            Container(
+              color: Colors.grey[200],
+              padding: EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  Expanded(child: Text(_replyToText!)),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _replyToMessageId = null;
+                        _replyToText = null;
+                        _replyToSenderId = null;
+                      });
+                    },
+                  )
+                ],
+              ),
+            ),
           // Message input field
           Padding(
             padding: const EdgeInsets.all(16.0),

@@ -18,6 +18,10 @@ class MessageBubble extends StatelessWidget {
   final String currentUserId;
   final bool isDeletedForEveryone;
   final List<String> deletedFor;
+  final String? replyToMessageId;
+  final String? replyToText;
+  final String? replyToSenderId;
+  final void Function(String messageId, String text, String senderId)? onReply;
 
   const MessageBubble({
     super.key,
@@ -34,6 +38,10 @@ class MessageBubble extends StatelessWidget {
     required this.currentUserId,
     required this.isDeletedForEveryone,
     required this.deletedFor,
+    this.replyToMessageId,
+    this.replyToText,
+    this.replyToSenderId,
+    this.onReply,
   });
 
   void _showDeleteDialog(BuildContext context) {
@@ -136,6 +144,11 @@ class MessageBubble extends StatelessWidget {
       onLongPress: () {
         _showDeleteDialog(context);
       },
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity! > 0 && onReply != null) { 
+          onReply!(messageId, message, senderId);
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
@@ -170,6 +183,16 @@ class MessageBubble extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (replyToText != null)
+                        Container(
+                          margin: EdgeInsets.only(bottom: 4),
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(replyToText!, style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black87)),
+                        ),
                       content,
                       const SizedBox(height: 4),
                       Align(

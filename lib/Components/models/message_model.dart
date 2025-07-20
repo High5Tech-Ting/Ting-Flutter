@@ -11,6 +11,9 @@ class Message {
   final String type; 
   final List<String> deletedFor;
   final bool isDeletedForEveryone;
+  final String? replyToMessageId;
+  final String? replyToText;
+  final String? replyToSenderId;
 
   Message({
     required this.messageId,
@@ -23,6 +26,9 @@ class Message {
     this.type = 'text',
     this.deletedFor = const [],
     this.isDeletedForEveryone = false,
+    this.replyToMessageId,
+    this.replyToText,
+    this.replyToSenderId,
   });
 
   factory Message.fromMap(Map<String, dynamic> data) {
@@ -39,6 +45,9 @@ class Message {
         type: data['type'] as String? ?? 'text',
         deletedFor: List<String>.from(data['deletedFor'] ?? []),
         isDeletedForEveryone: data['isDeletedForEveryone'] ?? false,
+        replyToMessageId: data['replyToMessageId'] as String?,
+        replyToText: data['replyToText'] as String?,
+        replyToSenderId: data['replyToSenderId'] as String?,
     );
   }
 
@@ -54,6 +63,9 @@ class Message {
       'type': type,
       'deletedFor': deletedFor,
       'isDeletedForEveryone': isDeletedForEveryone,
+      'replyToMessageId': replyToMessageId,
+      'replyToText': replyToText,
+      'replyToSenderId': replyToSenderId,
     };
   }
 }

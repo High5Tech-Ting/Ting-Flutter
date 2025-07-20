@@ -4,7 +4,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// This function must be outside any class
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await NotificationService.instance.setupFlutterNotifications();
@@ -142,21 +141,18 @@ class NotificationService {
 
   void _handleBackgroundMessage(RemoteMessage message) {
     if (message.data['type'] == 'chat') {
-      // Handle chat tap
       print('User tapped on a chat notification');
     } else {
       print('Opened from background: ${message.data}');
     }
   }
 
-  // Simple method to send notification when a message is sent
   Future<void> sendMessageNotification({
     required String receiverId,
     required String messageText,
     required String senderEmail,
   }) async {
     try {
-      // Get receiver's FCM token
       DocumentSnapshot receiverDoc = await _firestore.collection('users').doc(receiverId).get();
       
       if (receiverDoc.exists) {
@@ -164,7 +160,6 @@ class NotificationService {
         String? fcmToken = receiverData?['fcmToken'] as String?;
         
         if (fcmToken != null) {
-          // Create notification document for Cloud Function to process
           await _firestore.collection('notifications').add({
             'receiverId': receiverId,
             'fcmToken': fcmToken,
