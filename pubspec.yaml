@@ -67,7 +67,7 @@ flutter_native_splash:
   android_12:
     color: "#EBF4FF"
     color_dark: "#1E1E1E"
-    image: "assets/images/splash-blue-icon.png"
+    image: "assets/images/splash-blue-icon-12.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -89,6 +89,8 @@ flutter:
     - assets/images/email_sent.png
     - assets/images/chat_background.jpg
     - assets/images/logo.png
+    - assets/images/splash-blue-icon.png
+    - assets/images/splash-blue-icon-12.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
