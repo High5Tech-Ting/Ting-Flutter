@@ -46,7 +46,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
       return 'Yesterday';
     } else if (dateTime.year == now.year) {
       return DateFormat('MMM d').format(dateTime);
-
     } else {
       return DateFormat('MMM d, yyyy').format(dateTime);
     }
@@ -167,9 +166,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               final data =
                                   userSnapshot.data!.data()
                                       as Map<String, dynamic>;
-                              final email = data['email'] ?? 'No Email';
                               final lastSeen = data['lastSeen'] as Timestamp?;
                               final isOnline = data['online'] ?? false;
+                              final userName = data['displayName'] ?? "No Name";
                               final avatarUrl =
                                   data['avatarUrl'] ??
                                   "https://avatar.iran.liara.run/public/?username=${data['uid']}";
@@ -205,7 +204,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 isTyping = typingUsers[otherUserId] == true;
                               }
                               return ChatListItem(
-                                userName: email,
+                                userName: userName,
                                 lastMessage: isTyping
                                     ? 'typing...'
                                     : lastMessage.isNotEmpty
@@ -233,7 +232,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ChatScreen(
-                                        userName: email,
+                                        userName: userName,
                                         lastActiveTime: lastSeen != null
                                             ? formatTimestamp(lastSeen)
                                             : '',
@@ -255,8 +254,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 : StreamBuilder<QuerySnapshot>(
                     stream: _firestore.collection('users').snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
+                      if (!snapshot.hasData) {
                         return const Center(child: CircularProgressIndicator());
+                      }
                       final users = snapshot.data!.docs
                           .where((doc) => doc.id != currentUserId)
                           .toList();
@@ -266,7 +266,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         final email = (data['email'] ?? '')
                             .toString()
                             .toLowerCase();
-                        return email.contains(searchText);
+                        final displayName = (data['displayName'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        return email.contains(searchText) ||
+                            displayName.contains(searchText);
                       }).toList();
                       if (filteredUsers.isEmpty) {
                         return const Center(child: Text('No users found.'));
@@ -277,14 +281,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           final doc = filteredUsers[index];
                           final data = doc.data() as Map<String, dynamic>;
                           final uid = doc.id;
-                          final email = data['email'] ?? 'No Email';
                           final lastSeen = data['lastSeen'] as Timestamp?;
                           final isOnline = data['online'] ?? false;
+                          final userName = data['displayName'] ?? "No Name";
                           final avatarUrl =
                               data['avatarUrl'] ??
                               "https://avatar.iran.liara.run/public/?username=$uid";
                           return ChatListItem(
-                            userName: email,
+                            userName: userName,
                             lastMessage: isOnline
                                 ? 'Online'
                                 : lastSeen != null
@@ -303,7 +307,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => ChatScreen(
-                                    userName: email,
+                                    userName: userName,
                                     lastActiveTime: lastSeen != null
                                         ? formatTimestamp(lastSeen)
                                         : '',

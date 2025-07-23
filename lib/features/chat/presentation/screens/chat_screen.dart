@@ -362,9 +362,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                     final senderId = messageData['senderId']?.toString() ?? '';
                     final text = messageData['text']?.toString() ?? '';
-                    final messageId =
-                        messageData['messageId']?.toString() ??
-                        ''; // Add null check here
                     final isMe = senderId == currentUserId;
                     final bool isDeletedForEveryone =
                         messageData['isDeletedForEveryone'] == true;

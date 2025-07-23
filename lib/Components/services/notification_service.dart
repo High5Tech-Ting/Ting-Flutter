@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,7 +15,7 @@ class NotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isFlutterLocalNotificationsInitialized = false;
@@ -74,11 +73,13 @@ class NotificationService {
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
 
-    const initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettingsAndroid = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     const initializationSettingsDarwin = DarwinInitializationSettings();
 
@@ -110,7 +111,8 @@ class NotificationService {
           android: AndroidNotificationDetails(
             'high_importance_channel',
             'High Importance Notifications',
-            channelDescription: 'This channel is used for important notifications.',
+            channelDescription:
+                'This channel is used for important notifications.',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
@@ -153,12 +155,15 @@ class NotificationService {
     required String senderEmail,
   }) async {
     try {
-      DocumentSnapshot receiverDoc = await _firestore.collection('users').doc(receiverId).get();
-      
+      DocumentSnapshot receiverDoc = await _firestore
+          .collection('users')
+          .doc(receiverId)
+          .get();
+
       if (receiverDoc.exists) {
         final receiverData = receiverDoc.data() as Map<String, dynamic>?;
         String? fcmToken = receiverData?['fcmToken'] as String?;
-        
+
         if (fcmToken != null) {
           await _firestore.collection('notifications').add({
             'receiverId': receiverId,
@@ -169,7 +174,7 @@ class NotificationService {
             'timestamp': FieldValue.serverTimestamp(),
             'status': 'pending',
           });
-          
+
           print('Message notification queued for: $receiverId');
         } else {
           print('No FCM token found for receiver: $receiverId');
