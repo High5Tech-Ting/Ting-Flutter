@@ -3,13 +3,19 @@ import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:ting/Components/services/notification_service.dart';
+
+import 'dart:io';
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final String userName;
   final String lastActiveTime;
   final String avatarUrl;
   final bool isOnline;
-  // Add conversation id and participants for real chat
   final String? conversationId;
   final String? otherUserId;
 
@@ -34,9 +40,13 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
 
-  String get currentUserId => _auth.currentUser!.uid;
+  String get currentUserId => _auth.currentUser?.uid ?? '';
   String get otherUserId => widget.otherUserId ?? '';
   String get conversationId => widget.conversationId ?? ([currentUserId, otherUserId]..sort()).join('_');
+
+  String? _replyToMessageId;
+  String? _replyToText;
+  String? _replyToSenderId;
 
   @override
   void initState() {
@@ -65,16 +75,20 @@ class _ChatScreenState extends State<ChatScreen> {
         currentUserId: 0
       }
     }, SetOptions(merge: true));
+    
     QuerySnapshot unreadMessages = await _firestore
         .collection('conversations')
         .doc(conversationId)
         .collection('messages')
-        .where('senderId', isNotEqualTo: currentUserId)
         .where('read', isEqualTo: false)
         .get();
+    
     WriteBatch batch = _firestore.batch();
     for (var doc in unreadMessages.docs) {
-      batch.update(doc.reference, {'read': true, 'readAt': FieldValue.serverTimestamp()});
+      final messageData = doc.data() as Map<String, dynamic>?;
+      if (messageData?['senderId'] != currentUserId) {
+        batch.update(doc.reference, {'read': true, 'readAt': FieldValue.serverTimestamp()});
+      }
     }
     if (unreadMessages.docs.isNotEmpty) {
       await batch.commit();
@@ -127,15 +141,21 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('messages')
         .doc();
     await messageRef.set({
-      'id': messageRef.id,
+      'messageId': messageRef.id, 
       'senderId': senderId,
-      'body': messageText,
+      'receiverId': receiverId,
+      'text': messageText,        
       'timestamp': FieldValue.serverTimestamp(),
       'status': 'sent',
       'delivered': false,
       'deliveredAt': null,
       'read': false,
       'readAt': null,
+      'deletedFor': [],
+      'isDeletedForEveryone': false,
+      'replyToMessageId': _replyToMessageId,
+      'replyToText': _replyToText,
+      'replyToSenderId': _replyToSenderId,
     });
     DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
     Map<String, dynamic> unreadMessages = {};
@@ -152,9 +172,25 @@ class _ChatScreenState extends State<ChatScreen> {
       'participants': [currentUserId, receiverId],
       'unreadMessages': unreadMessages,
     }, SetOptions(merge: true));
+    
+    // Send notification to receiver
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.email != null) {
+      await NotificationService.instance.sendMessageNotification(
+        receiverId: receiverId,
+        messageText: messageText,
+        senderEmail: currentUser.email!,
+      );
+    }
+    
     _messageController.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
+    });
+    setState(() {
+      _replyToMessageId = null;
+      _replyToText = null;
+      _replyToSenderId = null;
     });
   }
 
@@ -168,21 +204,136 @@ class _ChatScreenState extends State<ChatScreen> {
   String formatTime(Timestamp? timestamp) {
     if (timestamp == null) return '';
     final DateTime dateTime = timestamp.toDate();
-    final String hour = dateTime.hour.toString().padLeft(2, '0');
-    final String minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final ampm = dateTime.hour >= 12 ? 'PM' : 'AM';
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute $ampm';
+  }
+
+  String formatDayLabel(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    final dateTime = timestamp.toDate();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final diff = today.difference(messageDay).inDays;
+    if (diff == 0) {
+      return 'Today';
+    } else if (diff == 1) {
+      return 'Yesterday';
+    } else if (dateTime.year == now.year) {
+      return DateFormat('MMM d').format(dateTime);
+    } else {
+      return DateFormat('MMM d, yyyy').format(dateTime);
+    }
   }
 
   Widget getMessageStatusIcon(Map<String, dynamic> messageData) {
     final isMe = messageData['senderId'] == currentUserId;
     if (!isMe) return const SizedBox.shrink();
-    // final status = messageData['status'] ?? 'sent';
     if (messageData['read'] == true) {
       return const Icon(Icons.done_all, size: 16, color: Colors.white);
     } else if (messageData['delivered'] == true) {
       return const Icon(Icons.done_all, size: 16, color: Colors.grey);
     } else {
       return const Icon(Icons.done, size: 16, color: Colors.grey);
+    }
+  }
+
+  Future<String?> _uploadFile(String path, String fileName) async {
+    try {
+      final ref = FirebaseStorage.instance.ref().child('chat_files/$fileName');
+      final uploadTask = await ref.putFile(File(path));
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print('File upload error: $e');
+      return null;
+    }
+  }
+
+  void _sendFileMessage({required String fileUrl, required String type, String? fileName}) async {
+    String senderId = currentUserId;
+    String receiverId = otherUserId;
+    final messageRef = _firestore
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .doc();
+    await messageRef.set({
+      'messageId': messageRef.id, 
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'text': '', 
+      'timestamp': FieldValue.serverTimestamp(),
+      'status': 'sent',
+      'delivered': false,
+      'deliveredAt': null,
+      'read': false,
+      'readAt': null,
+      'fileUrl': fileUrl,
+      'type': type,
+      'fileName': fileName ?? '',
+      'deletedFor': [],
+      'isDeletedForEveryone': false,
+      'replyToMessageId': _replyToMessageId,
+      'replyToText': _replyToText,
+      'replyToSenderId': _replyToSenderId,
+    });
+    DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
+    Map<String, dynamic> unreadMessages = {};
+    if (convDoc.exists) {
+      final data = convDoc.data() as Map<String, dynamic>?;
+      unreadMessages = data?['unreadMessages'] as Map<String, dynamic>? ?? {};
+    }
+    int currentUnread = unreadMessages[receiverId] as int? ?? 0;
+    unreadMessages[receiverId] = currentUnread + 1;
+    unreadMessages[senderId] = 0;
+    await _firestore.collection('conversations').doc(conversationId).set({
+      'lastMessage': type == 'text' ? '' : '[${type.toUpperCase()}]',
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'participants': [currentUserId, receiverId],
+      'unreadMessages': unreadMessages,
+    }, SetOptions(merge: true));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
+    setState(() {
+      _replyToMessageId = null;
+      _replyToText = null;
+      _replyToSenderId = null;
+    });
+  }
+
+  void _onPickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final url = await _uploadFile(pickedFile.path, pickedFile.name);
+      if (url != null) {
+        _sendFileMessage(fileUrl: url, type: 'image', fileName: pickedFile.name);
+      }
+    }
+  }
+
+  void _onPickVideo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final url = await _uploadFile(pickedFile.path, pickedFile.name);
+      if (url != null) {
+        _sendFileMessage(fileUrl: url, type: 'video', fileName: pickedFile.name);
+      }
+    }
+  }
+
+  void _onPickDocument() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    if (result != null && result.files.single.path != null) {
+      final file = result.files.single;
+      final url = await _uploadFile(file.path!, file.name);
+      if (url != null) {
+        _sendFileMessage(fileUrl: url, type: 'document', fileName: file.name);
+      }
     }
   }
 
@@ -253,93 +404,152 @@ class _ChatScreenState extends State<ChatScreen> {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _scrollToBottom();
                   });
-                  return ListView.builder(
-                    controller: _scrollController,
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      var messageData = messages[index].data() as Map<String, dynamic>;
-                      var senderId = messageData['senderId'] ?? '';
-                      var text = messageData['body'] ?? '';
-                      var timestamp = messageData['timestamp'] as Timestamp?;
-                      final isMe = senderId == currentUserId;
-                      if (!isMe && messageData['read'] == false) {
-                        _firestore
-                            .collection('conversations')
-                            .doc(conversationId)
-                            .collection('messages')
-                            .doc(messageData['id'])
-                            .update({
-                          'read': true,
-                          'readAt': FieldValue.serverTimestamp(),
-                          'status': 'read'
-                        });
-                      }
-                      return MessageBubble(
-                        message: text,
-                        isSender: isMe,
-                        time: formatTime(timestamp),
-                        statusIcon: getMessageStatusIcon(messageData),
+                  List<Widget> messageWidgets = [];
+                  String? lastDayLabel;
+                  for (int index = 0; index < messages.length; index++) {
+                    var messageData = messages[index].data() as Map<String, dynamic>;
+                    var timestamp = messageData['timestamp'] as Timestamp?;
+                    String dayLabel = formatDayLabel(timestamp);
+                    if (dayLabel != lastDayLabel) {
+                      messageWidgets.add(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(dayLabel, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ),
                       );
-                    },
+                      lastDayLabel = dayLabel;
+                    }
+                    final senderId = messageData['senderId']?.toString() ?? '';
+                    final text = messageData['text']?.toString() ?? '';
+                    final isMe = senderId == currentUserId;
+                    final fileUrl = messageData['fileUrl']?.toString();
+                    final type = messageData['type']?.toString() ?? 'text';
+                    final fileName = messageData['fileName']?.toString();
+                    final bool isDeletedForEveryone = messageData['isDeletedForEveryone'] == true;
+                    final List<dynamic> rawDeletedFor = messageData['deletedFor'] ?? [];
+                    final List<String> deletedFor = rawDeletedFor.whereType<String>().toList();
+
+                    if (!isMe && messageData['read'] == false) {
+                      _firestore
+                          .collection('conversations')
+                          .doc(conversationId)
+                          .collection('messages')
+                          .doc(messageData['messageId'])
+                          .update({
+                        'read': true,
+                        'readAt': FieldValue.serverTimestamp(),
+                        'status': 'read'
+                      });
+                    }
+
+                    if (isDeletedForEveryone) {
+                      messageWidgets.add(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "This message was deleted",
+                                  style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700]),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else if (deletedFor.contains(currentUserId)) {
+                    } else {
+                      messageWidgets.add(
+                        MessageBubble(
+                          message: text,
+                          isSender: isMe,
+                          time: formatTime(timestamp),
+                          statusIcon: getMessageStatusIcon(messageData),
+                          fileUrl: fileUrl,
+                          type: type,
+                          fileName: fileName,
+                          conversationId: conversationId,
+                          messageId: messageData['messageId'],
+                          senderId: senderId,
+                          currentUserId: currentUserId,
+                          isDeletedForEveryone: isDeletedForEveryone,
+                          deletedFor: deletedFor,
+                          replyToMessageId: messageData['replyToMessageId'],
+                          replyToText: messageData['replyToText'],
+                          replyToSenderId: messageData['replyToSenderId'],
+                          onReply: (replyToMessageId, replyToText, replyToSenderId) {
+                            setState(() {
+                              _replyToMessageId = replyToMessageId;
+                              _replyToText = replyToText;
+                              _replyToSenderId = replyToSenderId;
+                            });
+                          },
+                        ),
+                      );
+                    }
+                  }
+                  return ListView(
+                    controller: _scrollController,
+                    children: messageWidgets,
                   );
                 },
               ),
             ),
           ),
-          // Typing indicator
-          StreamBuilder<DocumentSnapshot>(
-            stream: _firestore.collection('conversations').doc(conversationId).snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data == null) {
-                return const SizedBox.shrink();
-              }
-              final data = snapshot.data!.data() as Map<String, dynamic>?;
-              if (data == null) return const SizedBox.shrink();
-              final typingUsers = data['typingUsers'] as Map<String, dynamic>? ?? {};
-              bool isOtherUserTyping = false;
-              for (var entry in typingUsers.entries) {
-                if (entry.key != currentUserId && entry.value == true) {
-                  isOtherUserTyping = true;
-                  break;
-                }
-              }
-              return isOtherUserTyping
-                  ? Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            height: 20,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: List.generate(
-                                3,
-                                (index) => Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Text("typing...", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink();
-            },
-          ),
+          if (_replyToText != null)
+            Container(
+              color: Colors.grey[200],
+              padding: EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  Expanded(child: Text(_replyToText!)),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _replyToMessageId = null;
+                        _replyToText = null;
+                        _replyToSenderId = null;
+                      });
+                    },
+                  )
+                ],
+              ),
+            ),
           // Message input field
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file),
+                  onPressed: _onPickDocument,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.image),
+                  onPressed: _onPickImage,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.videocam),
+                  onPressed: _onPickVideo,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,

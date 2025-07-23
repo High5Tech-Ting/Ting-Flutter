@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:ting/shared/theme.dart';
+import 'dart:ui'; 
+import 'package:url_launcher/url_launcher.dart';
+import 'package:ting/Components/services/message_service.dart';
 
 class MessageBubble extends StatelessWidget {
   final String message;
   final bool isSender;
   final String time;
   final Widget? statusIcon;
+  final String? fileUrl; 
+  final String type; 
+  final String? fileName; 
+  final String conversationId;
+  final String messageId;
+  final String senderId;
+  final String currentUserId;
+  final bool isDeletedForEveryone;
+  final List<String> deletedFor;
+  final String? replyToMessageId;
+  final String? replyToText;
+  final String? replyToSenderId;
+  final void Function(String messageId, String text, String senderId)? onReply;
 
   const MessageBubble({
     super.key,
@@ -13,77 +29,198 @@ class MessageBubble extends StatelessWidget {
     required this.isSender,
     required this.time,
     this.statusIcon,
+    this.fileUrl,
+    this.type = 'text',
+    this.fileName,
+    required this.conversationId,
+    required this.messageId,
+    required this.senderId,
+    required this.currentUserId,
+    required this.isDeletedForEveryone,
+    required this.deletedFor,
+    this.replyToMessageId,
+    this.replyToText,
+    this.replyToSenderId,
+    this.onReply,
   });
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Delete message?'),
+        children: [
+          SimpleDialogOption(
+            child: Text('Delete for me'),
+            onPressed: () async {
+              Navigator.pop(context);
+              await deleteMessageForMe(conversationId, messageId, currentUserId);
+            },
+          ),
+          if (senderId == currentUserId)
+            SimpleDialogOption(
+              child: Text('Delete for everyone'),
+              onPressed: () async {
+                Navigator.pop(context);
+                await deleteMessageForEveryone(conversationId, messageId);
+              },
+            ),
+          SimpleDialogOption(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: isSender
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    if (isDeletedForEveryone) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          mainAxisAlignment: isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                "This message was deleted",
+                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700]),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (deletedFor.contains(currentUserId)) {
+      return const SizedBox.shrink();
+    }
+
+    Widget content;
+    if (type == 'image' && fileUrl != null) {
+      content = Image.network(fileUrl!, fit: BoxFit.cover, width: 200, height: 200);
+    } else if (type == 'video' && fileUrl != null) {
+      content = Stack(
+        alignment: Alignment.center,
         children: [
-          Flexible(
-            child: IntrinsicWidth(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                decoration: BoxDecoration(
-                  color: isSender ? AppTheme.primary : Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(8),
-                    bottomLeft: Radius.circular(isSender ? 8 : 0),
-                    bottomRight: Radius.circular(isSender ? 0 : 8),
-                    topRight: const Radius.circular(8),
+          Container(
+            width: 200,
+            height: 200,
+            color: Colors.black12,
+            child: Icon(Icons.videocam, size: 64, color: Colors.grey),
+          ),
+          Icon(Icons.play_circle_fill, size: 64, color: Colors.white70),
+        ],
+      );
+    } else if (type == 'document' && fileUrl != null) {
+      content = InkWell(
+        onTap: () {
+          launchUrl(Uri.parse(fileUrl!));
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.insert_drive_file, color: Colors.blue),
+            const SizedBox(width: 8),
+            Flexible(child: Text(fileName ?? 'Document', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue))),
+          ],
+        ),
+      );
+    } else {
+      content = Text(
+        message,
+        style: TextStyle(
+          color: isSender ? Colors.white : Colors.black,
+          fontSize: 16,
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onLongPress: () {
+        _showDeleteDialog(context);
+      },
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity! > 0 && onReply != null) { 
+          onReply!(messageId, message, senderId);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          mainAxisAlignment: isSender
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: IntrinsicWidth(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.75,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(25),
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  decoration: BoxDecoration(
+                    color: isSender ? AppTheme.primary : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(8),
+                      bottomLeft: Radius.circular(isSender ? 8 : 0),
+                      bottomRight: Radius.circular(isSender ? 0 : 8),
+                      topRight: const Radius.circular(8),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message,
-                      style: TextStyle(
-                        color: isSender ? Colors.white : Colors.black,
-                        fontSize: 16,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(25),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            time,
-                            style: TextStyle(
-                              color: isSender ? Colors.white : Colors.black54,
-                              fontSize: 12,
-                            ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (replyToText != null)
+                        Container(
+                          margin: EdgeInsets.only(bottom: 4),
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          if (statusIcon != null) ...[
-                            const SizedBox(width: 4),
-                            statusIcon!,
+                          child: Text(replyToText!, style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black87)),
+                        ),
+                      content,
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              time,
+                              style: TextStyle(
+                                color: isSender ? Colors.white : Colors.black54,
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (statusIcon != null) ...[
+                              const SizedBox(width: 4),
+                              statusIcon!,
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

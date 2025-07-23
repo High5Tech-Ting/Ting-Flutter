@@ -4,6 +4,7 @@ import 'package:ting/features/chat/presentation/widgets/chat_list_item.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -36,14 +37,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (timestamp == null) return '';
     final dateTime = timestamp.toDate();
     final now = DateTime.now();
-    final isToday =
-        now.year == dateTime.year &&
-        now.month == dateTime.month &&
-        now.day == dateTime.day;
-    if (isToday) {
-      return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final diff = today.difference(messageDay).inDays;
+    if (diff == 0) {
+      return DateFormat('h:mm a').format(dateTime);
+    } else if (diff == 1) {
+      return 'Yesterday';
+    } else if (dateTime.year == now.year) {
+      return DateFormat('MMM d').format(dateTime);
+
     } else {
-      return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
+      return DateFormat('MMM d, yyyy').format(dateTime);
     }
   }
 
