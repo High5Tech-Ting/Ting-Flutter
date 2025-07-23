@@ -3,9 +3,6 @@ import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:ting/Components/services/notification_service.dart';
 
 import 'dart:io';
@@ -240,103 +237,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<String?> _uploadFile(String path, String fileName) async {
-    try {
-      final ref = FirebaseStorage.instance.ref().child('chat_files/$fileName');
-      final uploadTask = await ref.putFile(File(path));
-      return await ref.getDownloadURL();
-    } catch (e) {
-      print('File upload error: $e');
-      return null;
-    }
-  }
-
-  void _sendFileMessage({required String fileUrl, required String type, String? fileName}) async {
-    String senderId = currentUserId;
-    String receiverId = otherUserId;
-    final messageRef = _firestore
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .doc();
-    await messageRef.set({
-      'messageId': messageRef.id, 
-      'senderId': senderId,
-      'receiverId': receiverId,
-      'text': '', 
-      'timestamp': FieldValue.serverTimestamp(),
-      'status': 'sent',
-      'delivered': false,
-      'deliveredAt': null,
-      'read': false,
-      'readAt': null,
-      'fileUrl': fileUrl,
-      'type': type,
-      'fileName': fileName ?? '',
-      'deletedFor': [],
-      'isDeletedForEveryone': false,
-      'replyToMessageId': _replyToMessageId,
-      'replyToText': _replyToText,
-      'replyToSenderId': _replyToSenderId,
-    });
-    DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
-    Map<String, dynamic> unreadMessages = {};
-    if (convDoc.exists) {
-      final data = convDoc.data() as Map<String, dynamic>?;
-      unreadMessages = data?['unreadMessages'] as Map<String, dynamic>? ?? {};
-    }
-    int currentUnread = unreadMessages[receiverId] as int? ?? 0;
-    unreadMessages[receiverId] = currentUnread + 1;
-    unreadMessages[senderId] = 0;
-    await _firestore.collection('conversations').doc(conversationId).set({
-      'lastMessage': type == 'text' ? '' : '[${type.toUpperCase()}]',
-      'lastMessageTime': FieldValue.serverTimestamp(),
-      'participants': [currentUserId, receiverId],
-      'unreadMessages': unreadMessages,
-    }, SetOptions(merge: true));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
-    setState(() {
-      _replyToMessageId = null;
-      _replyToText = null;
-      _replyToSenderId = null;
-    });
-  }
-
-  void _onPickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final url = await _uploadFile(pickedFile.path, pickedFile.name);
-      if (url != null) {
-        _sendFileMessage(fileUrl: url, type: 'image', fileName: pickedFile.name);
-      }
-    }
-  }
-
-  void _onPickVideo() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final url = await _uploadFile(pickedFile.path, pickedFile.name);
-      if (url != null) {
-        _sendFileMessage(fileUrl: url, type: 'video', fileName: pickedFile.name);
-      }
-    }
-  }
-
-  void _onPickDocument() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
-    if (result != null && result.files.single.path != null) {
-      final file = result.files.single;
-      final url = await _uploadFile(file.path!, file.name);
-      if (url != null) {
-        _sendFileMessage(fileUrl: url, type: 'document', fileName: file.name);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -431,9 +331,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     final senderId = messageData['senderId']?.toString() ?? '';
                     final text = messageData['text']?.toString() ?? '';
                     final isMe = senderId == currentUserId;
-                    final fileUrl = messageData['fileUrl']?.toString();
-                    final type = messageData['type']?.toString() ?? 'text';
-                    final fileName = messageData['fileName']?.toString();
                     final bool isDeletedForEveryone = messageData['isDeletedForEveryone'] == true;
                     final List<dynamic> rawDeletedFor = messageData['deletedFor'] ?? [];
                     final List<String> deletedFor = rawDeletedFor.whereType<String>().toList();
@@ -481,9 +378,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           isSender: isMe,
                           time: formatTime(timestamp),
                           statusIcon: getMessageStatusIcon(messageData),
-                          fileUrl: fileUrl,
-                          type: type,
-                          fileName: fileName,
                           conversationId: conversationId,
                           messageId: messageData['messageId'],
                           senderId: senderId,
@@ -538,18 +432,6 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.attach_file),
-                  onPressed: _onPickDocument,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.image),
-                  onPressed: _onPickImage,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.videocam),
-                  onPressed: _onPickVideo,
-                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,

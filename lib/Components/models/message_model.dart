@@ -7,8 +7,6 @@ class Message {
   final String text;
   final Timestamp timestamp;
   final String status;
-  final String? fileUrl; 
-  final String type; 
   final List<String> deletedFor;
   final bool isDeletedForEveryone;
   final String? replyToMessageId;
@@ -22,8 +20,6 @@ class Message {
     required this.text,
     required this.timestamp,
     this.status = 'unknown',
-    this.fileUrl,
-    this.type = 'text',
     this.deletedFor = const [],
     this.isDeletedForEveryone = false,
     this.replyToMessageId,
@@ -41,8 +37,6 @@ class Message {
             ? data['timestamp'] as Timestamp
             : Timestamp.now(),
         status: data['status'] as String? ?? 'unknown',
-        fileUrl: data['fileUrl'] as String?,
-        type: data['type'] as String? ?? 'text',
         deletedFor: List<String>.from(data['deletedFor'] ?? []),
         isDeletedForEveryone: data['isDeletedForEveryone'] ?? false,
         replyToMessageId: data['replyToMessageId'] as String?,
@@ -59,8 +53,6 @@ class Message {
       'text': text,
       'timestamp': timestamp,
       'status': status,
-      'fileUrl': fileUrl,
-      'type': type,
       'deletedFor': deletedFor,
       'isDeletedForEveryone': isDeletedForEveryone,
       'replyToMessageId': replyToMessageId,
