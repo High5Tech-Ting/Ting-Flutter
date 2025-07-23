@@ -4,8 +4,6 @@ import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ting/Components/services/notification_service.dart';
-
-import 'dart:io';
 import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -39,7 +37,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String get currentUserId => _auth.currentUser?.uid ?? '';
   String get otherUserId => widget.otherUserId ?? '';
-  String get conversationId => widget.conversationId ?? ([currentUserId, otherUserId]..sort()).join('_');
+  String get conversationId =>
+      widget.conversationId ?? ([currentUserId, otherUserId]..sort()).join('_');
 
   String? _replyToMessageId;
   String? _replyToText;
@@ -68,23 +67,24 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _markMessagesAsRead() async {
     await _firestore.collection('conversations').doc(conversationId).set({
-      'unreadMessages': {
-        currentUserId: 0
-      }
+      'unreadMessages': {currentUserId: 0},
     }, SetOptions(merge: true));
-    
+
     QuerySnapshot unreadMessages = await _firestore
         .collection('conversations')
         .doc(conversationId)
         .collection('messages')
         .where('read', isEqualTo: false)
         .get();
-    
+
     WriteBatch batch = _firestore.batch();
     for (var doc in unreadMessages.docs) {
       final messageData = doc.data() as Map<String, dynamic>?;
       if (messageData?['senderId'] != currentUserId) {
-        batch.update(doc.reference, {'read': true, 'readAt': FieldValue.serverTimestamp()});
+        batch.update(doc.reference, {
+          'read': true,
+          'readAt': FieldValue.serverTimestamp(),
+        });
       }
     }
     if (unreadMessages.docs.isNotEmpty) {
@@ -138,10 +138,10 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('messages')
         .doc();
     await messageRef.set({
-      'messageId': messageRef.id, 
+      'messageId': messageRef.id,
       'senderId': senderId,
       'receiverId': receiverId,
-      'text': messageText,        
+      'text': messageText,
       'timestamp': FieldValue.serverTimestamp(),
       'status': 'sent',
       'delivered': false,
@@ -154,7 +154,10 @@ class _ChatScreenState extends State<ChatScreen> {
       'replyToText': _replyToText,
       'replyToSenderId': _replyToSenderId,
     });
-    DocumentSnapshot convDoc = await _firestore.collection('conversations').doc(conversationId).get();
+    DocumentSnapshot convDoc = await _firestore
+        .collection('conversations')
+        .doc(conversationId)
+        .get();
     Map<String, dynamic> unreadMessages = {};
     if (convDoc.exists) {
       final data = convDoc.data() as Map<String, dynamic>?;
@@ -169,7 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
       'participants': [currentUserId, receiverId],
       'unreadMessages': unreadMessages,
     }, SetOptions(merge: true));
-    
+
     // Send notification to receiver
     final currentUser = _auth.currentUser;
     if (currentUser != null && currentUser.email != null) {
@@ -179,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
         senderEmail: currentUser.email!,
       );
     }
-    
+
     _messageController.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
@@ -201,7 +204,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String formatTime(Timestamp? timestamp) {
     if (timestamp == null) return '';
     final DateTime dateTime = timestamp.toDate();
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final hour = dateTime.hour > 12
+        ? dateTime.hour - 12
+        : (dateTime.hour == 0 ? 12 : dateTime.hour);
     final ampm = dateTime.hour >= 12 ? 'PM' : 'AM';
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute $ampm';
@@ -245,31 +250,47 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: AppTheme.primary100,
         title: Row(
           children: [
-            CircleAvatar(radius: 20, backgroundImage: NetworkImage(widget.avatarUrl)),
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: NetworkImage(widget.avatarUrl),
+            ),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(widget.userName, style: TextStyle(fontSize: 20)),
                 StreamBuilder<DocumentSnapshot>(
-                  stream: _firestore.collection('users').doc(otherUserId).snapshots(),
+                  stream: _firestore
+                      .collection('users')
+                      .doc(otherUserId)
+                      .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     }
                     if (!snapshot.hasData || snapshot.data == null) {
-                      return const Text('Loading...', style: TextStyle(color: Colors.grey, fontSize: 14));
+                      return const Text(
+                        'Loading...',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      );
                     }
-                    final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                    final userData =
+                        snapshot.data!.data() as Map<String, dynamic>?;
                     final isOnline = userData?['online'] ?? false;
                     final lastSeen = userData?['lastSeen'] as Timestamp?;
                     return isOnline
-                        ? const Text('Online', style: TextStyle(color: Colors.green, fontSize: 14))
+                        ? const Text(
+                            'Online',
+                            style: TextStyle(color: Colors.green, fontSize: 14),
+                          )
                         : Text(
                             lastSeen != null
                                 ? 'Last active: ${formatTime(lastSeen)}'
                                 : 'Offline',
-                            style: const TextStyle(color: Colors.grey, fontSize: 14),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
                           );
                   },
                 ),
@@ -294,11 +315,12 @@ class _ChatScreenState extends State<ChatScreen> {
               child: StreamBuilder<QuerySnapshot>(
                 stream: getMessagesStream(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return Center(child: Text("Error:  [snapshot.error]"));
+                    return Center(child: Text("Error: ${snapshot.error}"));
                   }
                   var messages = snapshot.data?.docs ?? [];
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -307,7 +329,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   List<Widget> messageWidgets = [];
                   String? lastDayLabel;
                   for (int index = 0; index < messages.length; index++) {
-                    var messageData = messages[index].data() as Map<String, dynamic>;
+                    var messageData =
+                        messages[index].data() as Map<String, dynamic>;
                     var timestamp = messageData['timestamp'] as Timestamp?;
                     String dayLabel = formatDayLabel(timestamp);
                     if (dayLabel != lastDayLabel) {
@@ -316,12 +339,21 @@ class _ChatScreenState extends State<ChatScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Center(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.grey[300],
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(dayLabel, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                dayLabel,
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -330,22 +362,31 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                     final senderId = messageData['senderId']?.toString() ?? '';
                     final text = messageData['text']?.toString() ?? '';
+                    final messageId =
+                        messageData['messageId']?.toString() ??
+                        ''; // Add null check here
                     final isMe = senderId == currentUserId;
-                    final bool isDeletedForEveryone = messageData['isDeletedForEveryone'] == true;
-                    final List<dynamic> rawDeletedFor = messageData['deletedFor'] ?? [];
-                    final List<String> deletedFor = rawDeletedFor.whereType<String>().toList();
+                    final bool isDeletedForEveryone =
+                        messageData['isDeletedForEveryone'] == true;
+                    final List<dynamic> rawDeletedFor =
+                        messageData['deletedFor'] ?? [];
+                    final List<String> deletedFor = rawDeletedFor
+                        .whereType<String>()
+                        .toList();
 
                     if (!isMe && messageData['read'] == false) {
                       _firestore
                           .collection('conversations')
                           .doc(conversationId)
                           .collection('messages')
-                          .doc(messageData['messageId'])
+                          .doc(
+                            messageData['messageId']?.toString(),
+                          ) // Add null check here
                           .update({
-                        'read': true,
-                        'readAt': FieldValue.serverTimestamp(),
-                        'status': 'read'
-                      });
+                            'read': true,
+                            'readAt': FieldValue.serverTimestamp(),
+                            'status': 'read',
+                          });
                     }
 
                     if (isDeletedForEveryone) {
@@ -353,7 +394,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
-                            mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                            mainAxisAlignment: isMe
+                                ? MainAxisAlignment.end
+                                : MainAxisAlignment.start,
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(12),
@@ -363,7 +406,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                                 child: Text(
                                   "This message was deleted",
-                                  style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700]),
+                                  style: TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey[700],
+                                  ),
                                 ),
                               ),
                             ],
@@ -379,21 +425,27 @@ class _ChatScreenState extends State<ChatScreen> {
                           time: formatTime(timestamp),
                           statusIcon: getMessageStatusIcon(messageData),
                           conversationId: conversationId,
-                          messageId: messageData['messageId'],
+                          messageId:
+                              messageData['messageId']?.toString() ??
+                              '', // Add null check here
                           senderId: senderId,
                           currentUserId: currentUserId,
                           isDeletedForEveryone: isDeletedForEveryone,
                           deletedFor: deletedFor,
-                          replyToMessageId: messageData['replyToMessageId'],
-                          replyToText: messageData['replyToText'],
-                          replyToSenderId: messageData['replyToSenderId'],
-                          onReply: (replyToMessageId, replyToText, replyToSenderId) {
-                            setState(() {
-                              _replyToMessageId = replyToMessageId;
-                              _replyToText = replyToText;
-                              _replyToSenderId = replyToSenderId;
-                            });
-                          },
+                          replyToMessageId: messageData['replyToMessageId']
+                              ?.toString(), // Add null check here
+                          replyToText: messageData['replyToText']
+                              ?.toString(), // Add null check here
+                          replyToSenderId: messageData['replyToSenderId']
+                              ?.toString(), // Add null check here
+                          onReply:
+                              (replyToMessageId, replyToText, replyToSenderId) {
+                                setState(() {
+                                  _replyToMessageId = replyToMessageId;
+                                  _replyToText = replyToText;
+                                  _replyToSenderId = replyToSenderId;
+                                });
+                              },
                         ),
                       );
                     }
@@ -422,7 +474,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         _replyToSenderId = null;
                       });
                     },
-                  )
+                  ),
                 ],
               ),
             ),
