@@ -27,24 +27,82 @@ Stream<List<Message>> getMessagesStream(String userId) {
 }
 
 Future<void> deleteMessageForMe(String conversationId, String messageId, String userId) async {
-  await FirebaseFirestore.instance
-      .collection('conversations')
-      .doc(conversationId)
-      .collection('messages')
-      .doc(messageId)
-      .update({
-        'deletedFor': FieldValue.arrayUnion([userId])
-      });
+  // Try to delete from conversations first (regular chats)
+  try {
+    final conversationDoc = await FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .doc(messageId)
+        .get();
+    
+    if (conversationDoc.exists) {
+      await FirebaseFirestore.instance
+          .collection('conversations')
+          .doc(conversationId)
+          .collection('messages')
+          .doc(messageId)
+          .update({
+            'deletedFor': FieldValue.arrayUnion([userId])
+          });
+      return;
+    }
+  } catch (e) {
+    print('Not a conversation message, trying groups...');
+  }
+
+  // If not found in conversations, try groups
+  try {
+    await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(conversationId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+          'deletedFor': FieldValue.arrayUnion([userId])
+        });
+  } catch (e) {
+    print('Error deleting message for user: $e');
+  }
 }
 
 Future<void> deleteMessageForEveryone(String conversationId, String messageId) async {
-  await FirebaseFirestore.instance
-      .collection('conversations')
-      .doc(conversationId)
-      .collection('messages')
-      .doc(messageId)
-      .update({
-        'isDeletedForEveryone': true
-      });
+  // Try to delete from conversations first (regular chats)
+  try {
+    final conversationDoc = await FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .doc(messageId)
+        .get();
+    
+    if (conversationDoc.exists) {
+      await FirebaseFirestore.instance
+          .collection('conversations')
+          .doc(conversationId)
+          .collection('messages')
+          .doc(messageId)
+          .update({
+            'isDeletedForEveryone': true
+          });
+      return;
+    }
+  } catch (e) {
+    print('Not a conversation message, trying groups...');
+  }
+
+  // If not found in conversations, try groups
+  try {
+    await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(conversationId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+          'isDeletedForEveryone': true
+        });
+  } catch (e) {
+    print('Error deleting message for everyone: $e');
+  }
 }
 
