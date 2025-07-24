@@ -63,6 +63,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {},
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                await AuthRepository.signOut(context);
+              },
+              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+            ),
           ],
         ),
       ),
