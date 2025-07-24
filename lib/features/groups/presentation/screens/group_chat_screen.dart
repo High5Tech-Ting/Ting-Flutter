@@ -6,6 +6,7 @@ import 'package:ting/Components/services/group_chat_service.dart';
 import 'package:ting/Components/models/group_model.dart';
 import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:ting/shared/theme.dart';
+import 'package:ting/features/groups/presentation/screens/group_info.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
@@ -81,9 +82,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         _scrollToBottom();
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sending message: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
     }
   }
 
@@ -190,10 +191,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         ),
         actions: [
           PopupMenuButton<String>(
+            surfaceTintColor: AppTheme.primary100,
             onSelected: (value) {
               switch (value) {
                 case 'info':
-                  // TODO: Navigate to group info screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GroupInfo(
+                        groupId: widget.groupId,
+                        groupName: widget.groupName,
+                        groupImageUrl: widget.groupImageUrl,
+                      ),
+                    ),
+                  );
                   break;
                 case 'leave':
                   _showLeaveGroupDialog();
@@ -338,23 +349,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         message: text,
                         isSender: isMe,
                         time: formatTime(timestamp),
-                        statusIcon: null, // Group messages don't show read status
+                        statusIcon:
+                            null, // Group messages don't show read status
                         conversationId: widget.groupId,
                         messageId: messageData['messageId']?.toString() ?? '',
                         senderId: senderId,
                         currentUserId: currentUserId,
                         isDeletedForEveryone: isDeletedForEveryone,
                         deletedFor: deletedFor,
-                        replyToMessageId: messageData['replyToMessageId']?.toString(),
+                        replyToMessageId: messageData['replyToMessageId']
+                            ?.toString(),
                         replyToText: messageData['replyToText']?.toString(),
-                        replyToSenderId: messageData['replyToSenderId']?.toString(),
-                        onReply: (replyToMessageId, replyToText, replyToSenderId) {
-                          setState(() {
-                            _replyToMessageId = replyToMessageId;
-                            _replyToText = replyToText;
-                            _replyToSenderId = replyToSenderId;
-                          });
-                        },
+                        replyToSenderId: messageData['replyToSenderId']
+                            ?.toString(),
+                        onReply:
+                            (replyToMessageId, replyToText, replyToSenderId) {
+                              setState(() {
+                                _replyToMessageId = replyToMessageId;
+                                _replyToText = replyToText;
+                                _replyToSenderId = replyToSenderId;
+                              });
+                            },
                       );
 
                       // Add sender name for group messages
@@ -364,7 +379,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(left: 16, bottom: 4),
+                                padding: const EdgeInsets.only(
+                                  left: 16,
+                                  bottom: 4,
+                                ),
                                 child: FutureBuilder<String>(
                                   future: _getUserName(senderId),
                                   builder: (context, snapshot) {

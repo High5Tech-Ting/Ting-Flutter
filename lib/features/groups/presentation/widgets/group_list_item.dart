@@ -5,9 +5,9 @@ class GroupListItem extends StatelessWidget {
   final String groupName;
   final String lastMessage;
   final String time;
-  final String? groupImageUrl;
+  final String avatarUrl;
   final int newMessages;
-  final int memberCount;
+  final bool isOnline;
   final VoidCallback? onTap;
 
   const GroupListItem({
@@ -15,9 +15,9 @@ class GroupListItem extends StatelessWidget {
     required this.groupName,
     required this.lastMessage,
     required this.time,
-    this.groupImageUrl,
+    required this.avatarUrl,
     required this.newMessages,
-    required this.memberCount,
+    required this.isOnline,
     required this.onTap,
   });
 
@@ -29,19 +29,28 @@ class GroupListItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: AppTheme.primary,
-              backgroundImage: groupImageUrl != null
-                  ? NetworkImage(groupImageUrl!)
-                  : null,
-              child: groupImageUrl == null
-                  ? Icon(
-                      Icons.group,
-                      color: Colors.white,
-                      size: 32,
-                    )
-                  : null,
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage(avatarUrl),
+                  backgroundColor: Colors.grey.shade300,
+                ),
+                if (isOnline)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -51,14 +60,11 @@ class GroupListItem extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          groupName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        groupName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                       Text(
@@ -72,33 +78,13 @@ class GroupListItem extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$memberCount members',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    lastMessage,
-                    style: TextStyle(color: Colors.grey[700]),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (newMessages > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        '$newMessages new message${newMessages == 1 ? '' : 's'}',
-                        style: TextStyle(
-                          color: AppTheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
+                  Text(lastMessage, style: TextStyle(color: Colors.grey)),
+                  newMessages > 0
+                      ? Text(
+                          '$newMessages new messages',
+                          style: TextStyle(color: AppTheme.primary),
+                        )
+                      : const SizedBox.shrink(),
                 ],
               ),
             ),

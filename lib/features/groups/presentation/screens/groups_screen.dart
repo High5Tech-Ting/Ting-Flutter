@@ -38,7 +38,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final messageDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
     final diff = today.difference(messageDay).inDays;
-    
+
     if (diff == 0) {
       return DateFormat('h:mm a').format(dateTime);
     } else if (diff == 1) {
@@ -53,31 +53,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Groups'),
-        backgroundColor: AppTheme.primary100,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(AppTheme.primary100),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateGroupScreen(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Groups')),
       body: Column(
         children: [
-          // Search bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -97,6 +77,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
             ),
           ),
 
+          SizedBox(height: 16),
           // Groups list
           Expanded(
             child: StreamBuilder<List<GroupChat>>(
@@ -139,7 +120,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 }
 
                 final groups = snapshot.data ?? [];
-                
+
                 // Filter groups based on search query
                 final filteredGroups = _searchController.text.isEmpty
                     ? groups
@@ -154,8 +135,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _searchController.text.isEmpty 
-                              ? Icons.group_outlined 
+                          _searchController.text.isEmpty
+                              ? Icons.group_outlined
                               : Icons.search_off,
                           size: 64,
                           color: Colors.grey[400],
@@ -189,7 +170,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const CreateGroupScreen(),
+                                  builder: (context) =>
+                                      const CreateGroupScreen(),
                                 ),
                               );
                             },
@@ -215,117 +197,105 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   itemBuilder: (context, index) {
                     final group = filteredGroups[index];
                     final currentUserId = GroupChatService.currentUserId;
-                    final unreadCount = group.unreadMessages[currentUserId] ?? 0;
+                    final unreadCount =
+                        group.unreadMessages[currentUserId] ?? 0;
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: AppTheme.primary,
+                        backgroundImage: group.groupImageUrl != null
+                            ? NetworkImage(group.groupImageUrl!)
+                            : null,
+                        child: group.groupImageUrl == null
+                            ? Icon(Icons.group, color: Colors.white, size: 28)
+                            : null,
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          radius: 28,
-                          backgroundColor: AppTheme.primary,
-                          backgroundImage: group.groupImageUrl != null
-                              ? NetworkImage(group.groupImageUrl!)
-                              : null,
-                          child: group.groupImageUrl == null
-                              ? Icon(
-                                  Icons.group,
-                                  color: Colors.white,
-                                  size: 28,
-                                )
-                              : null,
+                      title: Text(
+                        group.groupName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
-                        title: Text(
-                          group.groupName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (group.lastMessage != null)
                             Text(
-                              '${group.memberIds.length} members',
+                              group.lastMessage!,
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: Colors.grey[700],
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (group.lastMessageTime != null)
+                            Text(
+                              _formatTimestamp(group.lastMessageTime),
+                              style: TextStyle(
+                                color: unreadCount > 0
+                                    ? AppTheme.primary
+                                    : Colors.grey[600],
+                                fontWeight: unreadCount > 0
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                                 fontSize: 12,
                               ),
                             ),
-                            if (group.lastMessage != null)
-                              Text(
-                                group.lastMessage!,
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          if (unreadCount > 0) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                          ],
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (group.lastMessageTime != null)
-                              Text(
-                                _formatTimestamp(group.lastMessageTime),
-                                style: TextStyle(
-                                  color: unreadCount > 0
-                                      ? AppTheme.primary
-                                      : Colors.grey[600],
-                                  fontWeight: unreadCount > 0
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                unreadCount > 99
+                                    ? '99+'
+                                    : unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                            if (unreadCount > 0) ...[
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primary,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  unreadCount > 99 ? '99+' : unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        onTap: () async {
-                          // Mark messages as read when entering group
-                          if (unreadCount > 0) {
-                            await GroupChatService.markGroupMessagesAsRead(group.groupId);
-                          }
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => GroupChatScreen(
-                                groupId: group.groupId,
-                                groupName: group.groupName,
-                                groupImageUrl: group.groupImageUrl,
                               ),
                             ),
-                          );
-                        },
+                          ],
+                        ],
                       ),
+                      onTap: () async {
+                        // Mark messages as read when entering group
+                        if (unreadCount > 0) {
+                          await GroupChatService.markGroupMessagesAsRead(
+                            group.groupId,
+                          );
+                        }
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GroupChatScreen(
+                              groupId: group.groupId,
+                              groupName: group.groupName,
+                              groupImageUrl: group.groupImageUrl,
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );
@@ -338,9 +308,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CreateGroupScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
           );
         },
         backgroundColor: AppTheme.primary,
