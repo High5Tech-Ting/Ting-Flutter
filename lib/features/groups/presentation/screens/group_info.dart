@@ -1,8 +1,7 @@
-import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Add this import
+import 'package:image_picker/image_picker.dart';
 import 'package:ting/Components/models/group_model.dart';
 import 'package:ting/Components/models/user_model.dart';
 import 'package:ting/Components/services/group_chat_service.dart';

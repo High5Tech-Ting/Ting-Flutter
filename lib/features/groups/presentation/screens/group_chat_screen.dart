@@ -380,8 +380,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             children: [
                               Padding(
                                 padding: const EdgeInsets.only(
-                                  left: 16,
-                                  bottom: 4,
+                                  left: 0,
+                                  bottom: 0,
                                 ),
                                 child: FutureBuilder<String>(
                                   future: _getUserName(senderId),
