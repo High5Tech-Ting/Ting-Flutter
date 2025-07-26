@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
@@ -13,6 +14,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   User? user;
+  String? studentId;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -22,6 +25,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUser() async {
     user = AuthRepository.currentUser();
+
+    if (user != null) {
+      try {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(user!.uid)
+            .get();
+
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          setState(() {
+            studentId = userData?['studentId'] as String?;
+          });
+        }
+      } catch (e) {
+        print('Error loading user data: $e');
+      }
+    }
   }
 
   @override
@@ -35,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ProfileHeader(
                 userName: user?.displayName ?? 'User Name',
                 userEmail: user?.email ?? 'Email',
-                studentId: user?.uid ?? 'Student ID',
+                studentId: studentId ?? 'Not Available',
                 batchNo: 'Batch 2023',
               ),
             ),

@@ -8,6 +8,7 @@ class AppUser {
   final bool online;
   final Timestamp? lastSeen;
   final String? fcmToken;
+  final String? studentId;
 
   AppUser({
     required this.uid,
@@ -17,6 +18,7 @@ class AppUser {
     this.online = false,
     this.lastSeen,
     this.fcmToken,
+    this.studentId,
   });
 
   factory AppUser.fromMap(Map<String, dynamic> data, String uid) {
@@ -28,6 +30,7 @@ class AppUser {
       online: data['online'] as bool? ?? false,
       lastSeen: data['lastSeen'] as Timestamp?,
       fcmToken: data['fcmToken'] as String?,
+      studentId: data['studentId'] as String?,
     );
   }
 
@@ -39,6 +42,7 @@ class AppUser {
       'online': online,
       'lastSeen': lastSeen,
       'fcmToken': fcmToken,
+      'studentId': studentId,
     };
   }
 
@@ -50,6 +54,7 @@ class AppUser {
     bool? online,
     Timestamp? lastSeen,
     String? fcmToken,
+    String? studentId,
   }) {
     return AppUser(
       uid: uid ?? this.uid,
@@ -59,6 +64,7 @@ class AppUser {
       online: online ?? this.online,
       lastSeen: lastSeen ?? this.lastSeen,
       fcmToken: fcmToken ?? this.fcmToken,
+      studentId: studentId ?? this.studentId,
     );
   }
 }

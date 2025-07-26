@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ting/shared/widgets/primary_button.dart';
 import 'package:uuid/uuid.dart';
 import 'package:ting/shared/theme.dart';
 
@@ -195,24 +196,7 @@ class _CreateNewPostsState extends State<CreateNewPosts> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create New Post'),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _createPost,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppTheme.primary,
-                    ),
-                  )
-                : const Text('Post', style: TextStyle(color: AppTheme.primary)),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Create New Post')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -221,7 +205,7 @@ class _CreateNewPostsState extends State<CreateNewPosts> {
             TextField(
               controller: _postController,
               maxLines: 8,
-              minLines: 3,
+              minLines: 6,
               decoration: const InputDecoration(
                 hintText: "What's on your mind?",
                 border: InputBorder.none,
@@ -270,17 +254,30 @@ class _CreateNewPostsState extends State<CreateNewPosts> {
 
             const SizedBox(height: 16),
 
-            // Add image button
-            if (_selectedImage == null)
-              ElevatedButton.icon(
-                onPressed: _showImageSourceActionSheet,
-                icon: const Icon(Icons.image),
-                label: const Text('Add Image'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary100,
-                  foregroundColor: AppTheme.primary,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (_selectedImage == null)
+                  OutlinedButton.icon(
+                    onPressed: _showImageSourceActionSheet,
+                    icon: const Icon(Icons.image),
+                    label: Text(
+                      'Add Image',
+                      style: AppTheme.bodyLarge.copyWith(
+                        fontSize: 16.0,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppTheme.primary),
+                    ),
+                  ),
+                PrimaryButton(
+                  onPressed: () => _isLoading ? null : _createPost,
+                  child: const Text('Post'),
                 ),
-              ),
+              ],
+            ),
           ],
         ),
       ),
