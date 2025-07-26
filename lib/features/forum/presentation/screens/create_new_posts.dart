@@ -90,7 +90,7 @@ class _CreateNewPostsState extends State<CreateNewPosts> {
           .collection('users')
           .doc(currentUser.uid)
           .get();
-      final userData = userDoc.data() as Map<String, dynamic>?;
+      final userData = userDoc.data();
       final userName =
           userData?['displayName'] ?? currentUser.email ?? 'Anonymous';
       final userPhotoUrl = userData?['photoURL'];

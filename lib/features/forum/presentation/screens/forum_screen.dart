@@ -15,7 +15,6 @@ class _ForumScreenState extends State<ForumScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  bool _isLoading = false;
   String? _searchQuery;
 
   @override
