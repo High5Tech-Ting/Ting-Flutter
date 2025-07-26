@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:ting/Components/services/group_chat_service.dart';
 import 'package:ting/Components/models/group_model.dart';
 import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:ting/features/chat/presentation/widgets/chat_input_widget.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:ting/features/groups/presentation/screens/group_info.dart';
+import 'package:ting/shared/services/attachment_service.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
@@ -33,6 +35,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String? _replyToMessageId;
   String? _replyToText;
   String? _replyToSenderId;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -57,20 +60,36 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     await GroupChatService.markGroupMessagesAsRead(widget.groupId);
   }
 
-  void _sendMessage() async {
-    if (_messageController.text.isEmpty) return;
+  void _sendMessage(String messageText, AttachmentFile? attachment) async {
+    if (messageText.isEmpty && attachment == null) return;
 
-    final messageText = _messageController.text;
-    _messageController.clear();
+    setState(() {
+      _isSending = true;
+    });
 
     try {
-      await GroupChatService.sendGroupMessage(
-        groupId: widget.groupId,
-        messageText: messageText,
-        replyToMessageId: _replyToMessageId,
-        replyToText: _replyToText,
-        replyToSenderId: _replyToSenderId,
-      );
+      if (attachment != null) {
+        // Send message with attachment
+        await GroupChatService.sendGroupMessageWithAttachment(
+          groupId: widget.groupId,
+          messageText: messageText,
+          file: attachment.file,
+          fileName: attachment.fileName,
+          fileType: attachment.fileType,
+          replyToMessageId: _replyToMessageId,
+          replyToText: _replyToText,
+          replyToSenderId: _replyToSenderId,
+        );
+      } else {
+        // Send text only message
+        await GroupChatService.sendGroupMessage(
+          groupId: widget.groupId,
+          messageText: messageText,
+          replyToMessageId: _replyToMessageId,
+          replyToText: _replyToText,
+          replyToSenderId: _replyToSenderId,
+        );
+      }
 
       setState(() {
         _replyToMessageId = null;
@@ -85,7 +104,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
     }
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyToMessageId = null;
+      _replyToText = null;
+      _replyToSenderId = null;
+    });
   }
 
   String formatTime(Timestamp? timestamp) {
@@ -117,7 +148,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  Future<String> _getUserName(String userId) async {
+  Future<String> _getUserName(String? userId) async {
+    if (userId == null) return 'Unknown User';
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -362,6 +394,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         replyToText: messageData['replyToText']?.toString(),
                         replyToSenderId: messageData['replyToSenderId']
                             ?.toString(),
+                        fileUrl: messageData['fileUrl']?.toString(),
+                        fileType: messageData['fileType']?.toString(),
+                        fileName: messageData['fileName']?.toString(),
                         onReply:
                             (replyToMessageId, replyToText, replyToSenderId) {
                               setState(() {
@@ -415,85 +450,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ),
             ),
           ),
-          if (_replyToText != null)
-            Container(
-              color: Colors.grey[200],
-              padding: EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        FutureBuilder<String>(
-                          future: _getUserName(_replyToSenderId ?? ''),
-                          builder: (context, snapshot) {
-                            return Text(
-                              'Replying to ${snapshot.data ?? 'Unknown'}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: AppTheme.primary,
-                              ),
-                            );
-                          },
-                        ),
-                        Text(
-                          _replyToText!,
-                          style: TextStyle(fontStyle: FontStyle.italic),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () {
-                      setState(() {
-                        _replyToMessageId = null;
-                        _replyToText = null;
-                        _replyToSenderId = null;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          // Message input field
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    maxLines: 5,
-                    minLines: 1,
-                    textInputAction: TextInputAction.newline,
-                    keyboardType: TextInputType.multiline,
-                    decoration: InputDecoration(
-                      hintText: 'Type a message',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: _sendMessage,
-                  icon: const Icon(Icons.send),
-                  style: ButtonStyle(
-                    iconColor: WidgetStatePropertyAll(AppTheme.surface),
-                    backgroundColor: WidgetStatePropertyAll(AppTheme.primary),
-                    padding: WidgetStatePropertyAll(EdgeInsets.all(10)),
-                  ),
-                ),
-              ],
-            ),
+          // Chat input widget
+          ChatInputWidget(
+            messageController: _messageController,
+            isSending: _isSending,
+            replyToText: _replyToText,
+            replyToSenderId: _replyToSenderId,
+            onSendMessage: _sendMessage,
+            onCancelReply: _cancelReply,
+            getUserName: _getUserName,
           ),
         ],
       ),

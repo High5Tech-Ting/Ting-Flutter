@@ -99,6 +99,9 @@ class GroupMessage {
   final String? replyToMessageId;
   final String? replyToText;
   final String? replyToSenderId;
+  final String? fileUrl;
+  final String? fileType;
+  final String? fileName;
 
   GroupMessage({
     required this.messageId,
@@ -112,6 +115,9 @@ class GroupMessage {
     this.replyToMessageId,
     this.replyToText,
     this.replyToSenderId,
+    this.fileUrl,
+    this.fileType,
+    this.fileName,
   });
 
   factory GroupMessage.fromMap(Map<String, dynamic> data) {
@@ -129,6 +135,9 @@ class GroupMessage {
       replyToMessageId: data['replyToMessageId'] as String?,
       replyToText: data['replyToText'] as String?,
       replyToSenderId: data['replyToSenderId'] as String?,
+      fileUrl: data['fileUrl'] as String?,
+      fileType: data['fileType'] as String?,
+      fileName: data['fileName'] as String?,
     );
   }
 
@@ -145,6 +154,9 @@ class GroupMessage {
       'replyToMessageId': replyToMessageId,
       'replyToText': replyToText,
       'replyToSenderId': replyToSenderId,
+      'fileUrl': fileUrl,
+      'fileType': fileType,
+      'fileName': fileName,
     };
   }
 }
