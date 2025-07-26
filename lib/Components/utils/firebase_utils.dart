@@ -1,1 +1,0 @@
-// This file is no longer needed. All Firebase initialization should be done in main.dart.

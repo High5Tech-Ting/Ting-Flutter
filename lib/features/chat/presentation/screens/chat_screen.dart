@@ -4,7 +4,7 @@ import 'package:ting/features/chat/presentation/widgets/chat_input_widget.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:ting/Components/services/notification_service.dart';
+import 'package:ting/core/services/notification_service.dart';
 import 'package:ting/shared/services/attachment_service.dart';
 import 'package:intl/intl.dart';
 

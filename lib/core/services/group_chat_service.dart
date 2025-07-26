@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/group_model.dart';
-import '../models/user_model.dart';
+import 'package:ting/core/models/group_model.dart';
+import 'package:ting/core/models/user_model.dart';
+import 'package:ting/shared/services/attachment_service.dart';
+import 'package:ting/shared/services/base_message_service.dart';
 import 'notification_service.dart';
-import '../../shared/services/base_message_service.dart';
-import '../../shared/services/attachment_service.dart';
 
 class GroupChatService implements BaseMessageService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;

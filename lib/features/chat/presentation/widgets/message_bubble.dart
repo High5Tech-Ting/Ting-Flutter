@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ting/shared/theme.dart';
-import 'package:ting/Components/services/message_service.dart';
+import 'package:ting/core/services/message_service.dart';
 import 'package:ting/features/chat/presentation/screens/image_preview_screen.dart';
 import 'package:ting/features/chat/presentation/screens/video_preview_screen.dart';
 import 'package:ting/services/document_download_service.dart';

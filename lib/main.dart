@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:ting/Components/services/notification_service.dart';
+import 'package:ting/core/services/notification_service.dart';
 import 'package:ting/features/auth/presentation/widgets/auth_wrapper.dart';
 import 'package:ting/firebase_options.dart';
 import 'shared/theme.dart';

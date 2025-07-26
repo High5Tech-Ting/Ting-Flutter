@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:ting/Components/models/user_model.dart';
-import 'package:ting/Components/services/group_chat_service.dart';
+import 'package:ting/core/models/user_model.dart';
+import 'package:ting/core/services/group_chat_service.dart';
 import 'package:ting/shared/theme.dart';
 
 class AddGroupMembersDialog extends StatefulWidget {
