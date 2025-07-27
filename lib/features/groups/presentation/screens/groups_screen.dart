@@ -10,6 +10,8 @@ import 'create_group_screen.dart';
 import 'create_broadcast_screen.dart';
 import 'group_chat_screen.dart';
 import 'broadcast_chat_screen.dart';
+import 'package:animated_icon/animated_icon.dart';
+import 'package:ting/core/services/api_client.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -52,6 +54,390 @@ class _GroupsScreenState extends State<GroupsScreen> {
       return DateFormat('MMM d').format(dateTime);
     } else {
       return DateFormat('MMM d, yyyy').format(dateTime);
+    }
+  }
+
+  void _showGroupUnreadMessagesBottomSheet(String groupId, String groupName) {
+    final currentUserId = GroupChatService.currentUserId;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Messages summary
+            Expanded(
+              child: FutureBuilder<List<QueryDocumentSnapshot>>(
+                future: FirebaseFirestore.instance
+                    .collection('groups')
+                    .doc(groupId)
+                    .collection('messages')
+                    .where('senderId', isNotEqualTo: currentUserId)
+                    .orderBy('senderId') // Required for inequality filter
+                    .orderBy('timestamp', descending: false)
+                    .get()
+                    .then((snapshot) {
+                      // Filter messages that are recent (last 24 hours) from other users
+                      final now = DateTime.now();
+                      final cutoffTime = now.subtract(const Duration(days: 1));
+
+                      return snapshot.docs.where((doc) {
+                        final data = doc.data();
+                        final timestamp = data['timestamp'] as Timestamp?;
+                        if (timestamp == null) return false;
+
+                        // Include messages from the last 24 hours from other users
+                        return timestamp.toDate().isAfter(cutoffTime);
+                      }).toList();
+                    }),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimateIcon(
+                            key: UniqueKey(),
+                            onTap: () {},
+                            iconType: IconType.continueAnimation,
+                            height: 70,
+                            width: 70,
+                            color: AppTheme.primary,
+                            animateIcon: AnimateIcons.chatMessage,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('Generating summary...'),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Error: ${snapshot.error}'),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final messages = snapshot.data ?? [];
+
+                  if (messages.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.mark_email_read,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No recent messages to summarize',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return FutureBuilder<List<String>>(
+                    future: _formatGroupMessagesForSummary(messages),
+                    builder: (context, formattedSnapshot) {
+                      if (formattedSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimateIcon(
+                                key: UniqueKey(),
+                                onTap: () {},
+                                iconType: IconType.continueAnimation,
+                                height: 70,
+                                width: 70,
+                                color: AppTheme.primary,
+                                animateIcon: AnimateIcons.chatMessage,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text('Formatting messages...'),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (formattedSnapshot.hasError ||
+                          !formattedSnapshot.hasData) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error,
+                                size: 64,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error formatting messages: ${formattedSnapshot.error}',
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final formattedMessages = formattedSnapshot.data!;
+
+                      return FutureBuilder<ChatSummaryResponse>(
+                        future: _getGroupSummary(formattedMessages),
+                        builder: (context, summarySnapshot) {
+                          if (summarySnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  AnimateIcon(
+                                    key: UniqueKey(),
+                                    onTap: () {},
+                                    iconType: IconType.continueAnimation,
+                                    height: 70,
+                                    width: 70,
+                                    color: AppTheme.primary,
+                                    animateIcon: AnimateIcons.chatMessage,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Summarizing ${formattedMessages.length} messages...',
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          if (summarySnapshot.hasError) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 64,
+                                    color: Colors.orange,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text('Failed to generate summary'),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    summarySnapshot.error.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {});
+                                    },
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          final summary = summarySnapshot.data!;
+
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.auto_awesome,
+                                        color: Colors.purple[600],
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'AI Summary',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.purple[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    summary.summary,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      height: 1.5,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<List<String>> _formatGroupMessagesForSummary(
+    List<QueryDocumentSnapshot> messages,
+  ) async {
+    final List<String> formattedMessages = [];
+
+    for (final doc in messages) {
+      final data = doc.data() as Map<String, dynamic>;
+      final text = data['text']?.toString() ?? '';
+      final senderId = data['senderId']?.toString() ?? '';
+      final timestamp = data['timestamp'] as Timestamp?;
+
+      if (text.isNotEmpty) {
+        // Get sender display name
+        String senderName = 'Unknown User';
+        try {
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(senderId)
+              .get();
+          if (userDoc.exists) {
+            final userData = userDoc.data() as Map<String, dynamic>;
+            senderName = userData['displayName'] ?? 'Unknown User';
+          }
+        } catch (e) {
+          print('Error getting user name: $e');
+        }
+
+        // Format timestamp
+        String timeString = '';
+        if (timestamp != null) {
+          final dateTime = timestamp.toDate();
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final messageDay = DateTime(
+            dateTime.year,
+            dateTime.month,
+            dateTime.day,
+          );
+          final diff = today.difference(messageDay).inDays;
+
+          if (diff == 0) {
+            timeString = DateFormat('h:mm a').format(dateTime);
+          } else if (diff == 1) {
+            timeString = 'Yesterday ${DateFormat('h:mm a').format(dateTime)}';
+          } else {
+            timeString = DateFormat('MMM d, h:mm a').format(dateTime);
+          }
+        }
+
+        // Format message with sender name and time
+        final formattedMessage = '$senderName ($timeString): $text';
+        formattedMessages.add(formattedMessage);
+      } else {
+        // Handle attachments
+        final fileType = data['fileType']?.toString();
+        if (fileType != null) {
+          String senderName = 'Unknown User';
+          try {
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(senderId)
+                .get();
+            if (userDoc.exists) {
+              final userData = userDoc.data() as Map<String, dynamic>;
+              senderName = userData['displayName'] ?? 'Unknown User';
+            }
+          } catch (e) {
+            print('Error getting user name: $e');
+          }
+
+          String timeString = '';
+          if (timestamp != null) {
+            final dateTime = timestamp.toDate();
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
+            final messageDay = DateTime(
+              dateTime.year,
+              dateTime.month,
+              dateTime.day,
+            );
+            final diff = today.difference(messageDay).inDays;
+
+            if (diff == 0) {
+              timeString = DateFormat('h:mm a').format(dateTime);
+            } else if (diff == 1) {
+              timeString = 'Yesterday ${DateFormat('h:mm a').format(dateTime)}';
+            } else {
+              timeString = DateFormat('MMM d, h:mm a').format(dateTime);
+            }
+          }
+
+          final formattedMessage =
+              '$senderName ($timeString): [${fileType.toUpperCase()} attachment]';
+          formattedMessages.add(formattedMessage);
+        }
+      }
+    }
+
+    return formattedMessages;
+  }
+
+  Future<ChatSummaryResponse> _getGroupSummary(List<String> messages) async {
+    try {
+      return await ApiClient.instance.summarizeMessages(messages);
+    } catch (e) {
+      throw Exception('Failed to get summary: $e');
     }
   }
 
@@ -353,6 +739,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       groupImageUrl: group.groupImageUrl,
                     ),
                   ),
+                );
+              },
+              onLongPress: () {
+                // Show group messages summary bottom sheet
+                _showGroupUnreadMessagesBottomSheet(
+                  group.groupId,
+                  group.groupName,
                 );
               },
             );

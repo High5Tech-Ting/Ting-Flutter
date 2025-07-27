@@ -163,7 +163,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           ),
                           SizedBox(height: 16),
                           Text(
-                            'No unread messages',
+                            'No recent messages to summarize',
                             style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         ],
@@ -243,44 +243,47 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
                       final summary = summarySnapshot.data!;
 
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  color: Colors.purple[600],
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'AI Summary',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome,
                                     color: Colors.purple[600],
+                                    size: 20,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              summary.summary,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                height: 1.5,
-                                color: Colors.black87,
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'AI Summary',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.purple[600],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                              Text(
+                                summary.summary,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  height: 1.5,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
