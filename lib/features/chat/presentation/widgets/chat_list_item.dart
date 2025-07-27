@@ -9,6 +9,7 @@ class ChatListItem extends StatelessWidget {
   final int newMessages;
   final bool isOnline;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   const ChatListItem({
     super.key,
@@ -19,12 +20,14 @@ class ChatListItem extends StatelessWidget {
     required this.newMessages,
     required this.isOnline,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         child: Row(

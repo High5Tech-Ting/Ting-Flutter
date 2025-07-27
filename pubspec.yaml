@@ -52,6 +52,7 @@ dependencies:
   permission_handler: ^11.2.0
   device_info_plus: ^9.1.2
   open_file: ^3.3.2
+  animated_icon: ^0.0.9
 dev_dependencies:
   flutter_test:
     sdk: flutter

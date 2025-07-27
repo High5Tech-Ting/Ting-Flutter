@@ -1,3 +1,4 @@
+import 'package:animated_icon/animated_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:ting/features/chat/presentation/screens/chat_screen.dart';
 import 'package:ting/features/chat/presentation/widgets/chat_list_item.dart';
@@ -5,6 +6,7 @@ import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:ting/core/services/api_client.dart'; // Add this import
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -69,6 +71,235 @@ class _ChatListScreenState extends State<ChatListScreen> {
       });
     }
     return conversationId;
+  }
+
+  void _showUnreadMessagesBottomSheet(String conversationId, String userName) {
+    final currentUserId = _auth.currentUser?.uid ?? '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Messages summary
+            Expanded(
+              child: FutureBuilder<List<QueryDocumentSnapshot>>(
+                future: _firestore
+                    .collection('conversations')
+                    .doc(conversationId)
+                    .collection('messages')
+                    .where('read', isEqualTo: false)
+                    .where('senderId', isNotEqualTo: currentUserId)
+                    .orderBy('senderId') // Required for inequality filter
+                    .orderBy('timestamp', descending: false)
+                    .get()
+                    .then((snapshot) => snapshot.docs),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimateIcon(
+                            key: UniqueKey(),
+                            onTap: () {},
+                            iconType: IconType.continueAnimation,
+                            height: 70,
+                            width: 70,
+                            color: AppTheme.primary,
+                            animateIcon: AnimateIcons.chatMessage,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('Generating summary...'),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Error: ${snapshot.error}'),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final messages = snapshot.data ?? [];
+
+                  if (messages.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.mark_email_read,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No unread messages',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // Extract message texts for API call
+                  final messageTexts = messages
+                      .map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final text = data['text']?.toString() ?? '';
+                        return text.isNotEmpty ? text : '[Attachment]';
+                      })
+                      .where((text) => text.isNotEmpty)
+                      .toList();
+
+                  return FutureBuilder<ChatSummaryResponse>(
+                    future: _getSummary(messageTexts),
+                    builder: (context, summarySnapshot) {
+                      if (summarySnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimateIcon(
+                                key: UniqueKey(),
+                                onTap: () {},
+                                iconType: IconType.continueAnimation,
+                                height: 70,
+                                width: 70,
+                                color: AppTheme.primary,
+                                animateIcon: AnimateIcons.chatMessage,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Summarizing ${messageTexts.length} messages...',
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (summarySnapshot.hasError) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text('Failed to generate summary'),
+                              const SizedBox(height: 8),
+                              Text(
+                                summarySnapshot.error.toString(),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {});
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final summary = summarySnapshot.data!;
+
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  color: Colors.purple[600],
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'AI Summary',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              summary.summary,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                height: 1.5,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<ChatSummaryResponse> _getSummary(List<String> messages) async {
+    try {
+      return await ApiClient.instance.summarizeMessages(messages);
+    } catch (e) {
+      throw Exception('Failed to get summary: $e');
+    }
   }
 
   @override
@@ -242,6 +473,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                         otherUserId: otherUserId,
                                       ),
                                     ),
+                                  );
+                                },
+                                onLongPress: () {
+                                  // Show unread messages summary bottom sheet
+                                  _showUnreadMessagesBottomSheet(
+                                    convDoc.id,
+                                    userName,
                                   );
                                 },
                               );
