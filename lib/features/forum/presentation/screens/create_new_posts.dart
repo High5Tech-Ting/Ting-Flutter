@@ -273,8 +273,21 @@ class _CreateNewPostsState extends State<CreateNewPosts> {
                     ),
                   ),
                 PrimaryButton(
-                  onPressed: () => _isLoading ? null : _createPost,
-                  child: const Text('Post'),
+                  onPressed: _isLoading
+                      ? null
+                      : () async => await _createPost(),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text('Post'),
                 ),
               ],
             ),
