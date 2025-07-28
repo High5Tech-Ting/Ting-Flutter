@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
+import 'package:ting/features/support/presentation/screens/support_tickets_screen.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -81,7 +82,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ListTile(
               leading: const Icon(Icons.support_agent_outlined),
               title: const Text('Support Tickets'),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SupportTicketsScreen(),
+                  ),
+                );
+              },
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
             ListTile(
