@@ -149,7 +149,13 @@ class _BroadcastChatScreenState extends State<BroadcastChatScreen> {
                   children: [
                     Icon(Icons.info_outline),
                     SizedBox(width: 8),
-                    Text('Broadcast Info'),
+                    Text(
+                      'Broadcast Info',
+                      style: TextStyle(
+                        fontFamily: "NunitoSans",
+                        fontVariations: [FontVariation('wght', 500)],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -161,7 +167,11 @@ class _BroadcastChatScreenState extends State<BroadcastChatScreen> {
                     SizedBox(width: 8),
                     Text(
                       'Delete Broadcast',
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontFamily: "NunitoSans",
+                        fontVariations: [FontVariation('wght', 500)],
+                      ),
                     ),
                   ],
                 ),
