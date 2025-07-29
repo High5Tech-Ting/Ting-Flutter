@@ -14,9 +14,10 @@ class SupportTicketsScreen extends StatefulWidget {
   State<SupportTicketsScreen> createState() => _SupportTicketsScreenState();
 }
 
-class _SupportTicketsScreenState extends State<SupportTicketsScreen> with SingleTickerProviderStateMixin {
+class _SupportTicketsScreenState extends State<SupportTicketsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +51,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> with Single
             Tab(text: 'Resolved'),
             Tab(text: 'Closed'),
           ],
+          dividerColor: Colors.transparent,
         ),
       ),
       body: TabBarView(
@@ -64,9 +66,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> with Single
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CreateTicketScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const CreateTicketScreen()),
           );
         },
         backgroundColor: AppTheme.primary,
@@ -78,28 +78,26 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> with Single
 
 class _TicketList extends StatelessWidget {
   final TicketStatus status;
-  
+
   const _TicketList({required this.status});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<SupportTicket>>(
-      stream: AdminService.isCurrentUserAdmin() 
+      stream: AdminService.isCurrentUserAdmin()
           ? SupportTicketService.getAllTicketsByStatus(status)
           : SupportTicketService.getTicketsByStatus(status),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
-        
+
         final tickets = snapshot.data ?? [];
-        
+
         if (tickets.isEmpty) {
           return Center(
             child: Column(
@@ -113,37 +111,36 @@ class _TicketList extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'No ${status.name} tickets',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Your ${status.name} support tickets will appear here',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(color: Colors.grey[500]),
                 ),
               ],
             ),
           );
         }
-        
+
         return ListView.builder(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8.0),
           itemCount: tickets.length,
           itemBuilder: (context, index) {
-            return TicketCard(
-              ticket: tickets[index],
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TicketDetailScreen(ticketId: tickets[index].ticketId),
-                  ),
-                );
-              },
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: TicketCard(
+                ticket: tickets[index],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          TicketDetailScreen(ticketId: tickets[index].ticketId),
+                    ),
+                  );
+                },
+              ),
             );
           },
         );

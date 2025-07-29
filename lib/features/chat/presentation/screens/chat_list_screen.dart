@@ -6,7 +6,7 @@ import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:ting/core/services/api_client.dart'; // Add this import
+import 'package:ting/core/services/api_client.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -527,7 +527,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           final userName = data['displayName'] ?? "No Name";
                           final avatarUrl =
                               data['avatarUrl'] ??
-                              "https://avatar.iran.liara.run/public/?username=$uid";
+                              "https://avatar.iran.liara.run/public/?username=$userName";
                           return ChatListItem(
                             userName: userName,
                             lastMessage: isOnline

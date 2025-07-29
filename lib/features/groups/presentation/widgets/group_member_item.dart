@@ -86,6 +86,8 @@ class GroupMemberItem extends StatelessWidget {
                         isMemberAdmin ? 'Remove admin status' : 'Make admin',
                         style: TextStyle(
                           color: isMemberAdmin ? Colors.red : Colors.blue,
+                          fontFamily: "NunitoSans",
+                          fontVariations: [FontVariation('wght', 500)],
                         ),
                       ),
                     ],
@@ -99,7 +101,11 @@ class GroupMemberItem extends StatelessWidget {
                       const SizedBox(width: 8),
                       const Text(
                         'Remove from group',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(
+                          fontFamily: "NunitoSans",
+                          fontVariations: [FontVariation('wght', 500)],
+                          color: Colors.red,
+                        ),
                       ),
                     ],
                   ),

@@ -250,7 +250,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   children: [
                     Icon(Icons.info_outline),
                     SizedBox(width: 8),
-                    Text('Group Info'),
+                    Text(
+                      'Group Info',
+                      style: TextStyle(
+                        fontFamily: "NunitoSans",
+                        fontVariations: [FontVariation('wght', 500)],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -260,7 +266,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   children: [
                     Icon(Icons.exit_to_app, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Leave Group', style: TextStyle(color: Colors.red)),
+                    Text(
+                      'Leave Group',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontFamily: "NunitoSans",
+                        fontVariations: [FontVariation('wght', 500)],
+                      ),
+                    ),
                   ],
                 ),
               ),

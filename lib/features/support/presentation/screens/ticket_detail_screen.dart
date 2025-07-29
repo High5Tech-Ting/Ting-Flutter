@@ -47,9 +47,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading ticket: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading ticket: $e')));
       }
     }
   }
@@ -68,7 +68,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       );
 
       _messageController.clear();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -124,7 +124,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(
-          child: Text('Ticket not found or you don\'t have permission to view it'),
+          child: Text(
+            'Ticket not found or you don\'t have permission to view it',
+          ),
         ),
       );
     }
@@ -143,12 +145,11 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Main scrollable content area - including ticket header
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Ticket info header - now scrollable
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -173,7 +174,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _getStatusColor(_ticket!.status),
                                   borderRadius: BorderRadius.circular(12),
@@ -226,13 +230,20 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                                   child: Image.network(
                                     _ticket!.imageUrl!,
                                     fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(child: CircularProgressIndicator());
-                                    },
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        },
                                     errorBuilder: (context, error, stackTrace) {
                                       return const Center(
-                                        child: Icon(Icons.error, color: Colors.red),
+                                        child: Icon(
+                                          Icons.error,
+                                          color: Colors.red,
+                                        ),
                                       );
                                     },
                                   ),
@@ -244,26 +255,33 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       ),
                     ),
 
-                    // Assignee section - only show if ticket is actually assigned OR if admin wants to assign
-                    if (_ticket!.assignedTo != null || AdminService.isCurrentUserAdmin())
+                    if (_ticket!.assignedTo != null ||
+                        AdminService.isCurrentUserAdmin())
                       AssigneeSection(
                         ticket: _ticket!,
                         onAssigned: () => _loadTicket(),
                       ),
 
-                    // Status update widget - only for admin or assigned user
-                    if (AdminService.isCurrentUserAdmin() || 
-                        _ticket!.assignedTo == FirebaseAuth.instance.currentUser?.uid)
+                    if (AdminService.isCurrentUserAdmin() ||
+                        _ticket!.assignedTo ==
+                            FirebaseAuth.instance.currentUser?.uid)
                       StatusUpdateWidget(
                         ticket: _ticket!,
                         onStatusUpdated: () => _loadTicket(),
                       ),
 
-                    // Messages section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Divider(color: Colors.grey.shade300),
+                    ),
+
                     StreamBuilder<List<TicketMessage>>(
-                      stream: SupportTicketService.getTicketMessages(widget.ticketId),
+                      stream: SupportTicketService.getTicketMessages(
+                        widget.ticketId,
+                      ),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.all(20),
                             child: Center(child: CircularProgressIndicator()),
@@ -273,7 +291,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         if (snapshot.hasError) {
                           return Padding(
                             padding: const EdgeInsets.all(20),
-                            child: Center(child: Text('Error: ${snapshot.error}')),
+                            child: Center(
+                              child: Text('Error: ${snapshot.error}'),
+                            ),
                           );
                         }
 
@@ -282,40 +302,35 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         if (messages.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(20),
-                            child: Center(
-                              child: Text('No messages yet'),
-                            ),
+                            child: Center(child: Text('No messages yet')),
                           );
                         }
 
-                        // Return messages in a Column instead of ListView to work within SingleChildScrollView
                         return Padding(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Column(
-                            children: messages.map((message) => 
-                              _MessageBubble(message: message)
-                            ).toList(),
+                            children: messages
+                                .map(
+                                  (message) => _MessageBubble(message: message),
+                                )
+                                .toList(),
                           ),
                         );
                       },
                     ),
-                    
-                    // Add some bottom padding to ensure last message is visible above input
+
                     const SizedBox(height: 80),
                   ],
                 ),
               ),
             ),
 
-            // Message input - Fixed at bottom
             if (_ticket!.status != TicketStatus.closed)
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!),
-                  ),
+                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
                 ),
                 child: Row(
                   children: [
@@ -361,27 +376,31 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   void _showImageDialog(String imageUrl) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBar(
-              title: const Text('Image'),
-              automaticallyImplyLeading: false,
-              actions: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            Expanded(
+      builder: (context) => Dialog.fullscreen(
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            title: const Text('Image', style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.black,
+            automaticallyImplyLeading: false,
+            iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ],
+          ),
+          body: Center(
+            child: InteractiveViewer(
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
                 },
                 errorBuilder: (context, error, stackTrace) {
                   return const Center(
@@ -390,7 +409,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 },
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -416,31 +435,22 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFromSupport = message.isFromAdmin;
-    
-    // Determine if this message is from an admin or assigned user
-    final bool isActualAdmin = message.senderId == "i14bEX30GkT509oJz0pggxsRcs62";
-    
+
+    final bool isActualAdmin =
+        message.senderId == "i14bEX30GkT509oJz0pggxsRcs62";
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: isFromSupport 
-            ? MainAxisAlignment.start 
+        mainAxisAlignment: isFromSupport
+            ? MainAxisAlignment.start
             : MainAxisAlignment.end,
         children: [
-          if (isFromSupport) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: isActualAdmin ? Colors.red : Colors.blue,
-              child: Icon(
-                isActualAdmin ? Icons.support_agent : Icons.person_pin,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
           Flexible(
             child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: isFromSupport ? Colors.grey[200] : AppTheme.primary,
@@ -455,7 +465,9 @@ class _MessageBubble extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isActualAdmin ? Colors.red[800] : Colors.blue[800],
+                        color: isActualAdmin
+                            ? Colors.red[800]
+                            : Colors.blue[800],
                       ),
                     ),
                   Text(
@@ -466,7 +478,9 @@ class _MessageBubble extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    DateFormat('MMM dd, HH:mm').format(message.createdAt.toDate()),
+                    DateFormat(
+                      'MMM dd, HH:mm',
+                    ).format(message.createdAt.toDate()),
                     style: TextStyle(
                       fontSize: 10,
                       color: isFromSupport ? Colors.grey[500] : Colors.white70,
@@ -476,18 +490,6 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (!isFromSupport) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppTheme.primary,
-              child: const Icon(
-                Icons.person,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
-          ],
         ],
       ),
     );

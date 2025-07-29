@@ -16,7 +16,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   File? _selectedImage;
   bool _isLoading = false;
 
@@ -44,9 +44,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
   }
@@ -181,7 +181,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       if (_selectedImage != null) ...[
                         Container(
                           height: 200,
@@ -209,7 +209,10 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             TextButton.icon(
                               onPressed: _removeImage,
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              label: const Text('Remove', style: TextStyle(color: Colors.red)),
+                              label: const Text(
+                                'Remove',
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ),
                           ],
                         ),
@@ -217,7 +220,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                         Center(
                           child: ElevatedButton.icon(
                             onPressed: _pickImage,
-                            icon: const Icon(Icons.add_a_photo),
+                            icon: const Icon(Icons.image_outlined),
                             label: const Text('Add Image'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primary,
@@ -235,23 +238,25 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               // Submit button
               PrimaryButton(
                 onPressed: _isLoading ? () {} : () => _createTicket(),
-                child: _isLoading 
-                  ? const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: _isLoading
+                    ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 8),
-                        Text('Creating...'),
-                      ],
-                    )
-                  : const Text('Create Ticket'),
+                          SizedBox(width: 8),
+                          Text('Creating...'),
+                        ],
+                      )
+                    : const Text('Create Ticket'),
               ),
               const SizedBox(height: 16),
 

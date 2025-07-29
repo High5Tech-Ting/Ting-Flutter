@@ -143,6 +143,24 @@ class AppTheme {
           ),
         ),
       ),
+      tabBarTheme: TabBarThemeData(
+        labelStyle: TextStyle(
+          fontFamily: "NunitoSans",
+          fontVariations: [FontVariation('wght', 600)],
+        ),
+        dividerColor: Colors.transparent,
+        unselectedLabelStyle: TextStyle(
+          fontFamily: "NunitoSans",
+          fontVariations: [FontVariation('wght', 600)],
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: surface,
+        textStyle: bodyMedium.copyWith(color: textPrimary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+      ),
     );
   }
 }

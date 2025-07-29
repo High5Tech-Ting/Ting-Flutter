@@ -17,34 +17,23 @@ class StatusUpdateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    
-    // Only show for admin or assigned user
-    if (!AdminService.isCurrentUserAdmin() && 
+
+    if (!AdminService.isCurrentUserAdmin() &&
         ticket.assignedTo != currentUser?.uid) {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
-          Icon(Icons.admin_panel_settings, color: Colors.blue[700]),
+          Icon(Icons.admin_panel_settings_outlined, color: Colors.blue[700]),
           const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'Update Status',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+          Text(
+            'Update Status:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
+          const SizedBox(width: 8),
           PopupMenuButton<String>(
             onSelected: (status) => _updateStatus(context, status),
             itemBuilder: (context) => [
@@ -54,7 +43,13 @@ class StatusUpdateWidget extends StatelessWidget {
                   children: [
                     Icon(Icons.check_circle, color: Colors.green),
                     SizedBox(width: 8),
-                    Text('Mark as Resolved'),
+                    Text(
+                      'Mark as Resolved',
+                      style: TextStyle(
+                        fontFamily: "NunitoSans",
+                        fontVariations: [FontVariation('wght', 500)],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -64,7 +59,13 @@ class StatusUpdateWidget extends StatelessWidget {
                   children: [
                     Icon(Icons.cancel, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Mark as Closed'),
+                    Text(
+                      'Mark as Closed',
+                      style: TextStyle(
+                        fontFamily: "NunitoSans",
+                        fontVariations: [FontVariation('wght', 500)],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -75,7 +76,13 @@ class StatusUpdateWidget extends StatelessWidget {
                     children: [
                       Icon(Icons.schedule, color: Colors.orange),
                       SizedBox(width: 8),
-                      Text('Mark as Pending'),
+                      Text(
+                        'Mark as Pending',
+                        style: TextStyle(
+                          fontFamily: "NunitoSans",
+                          fontVariations: [FontVariation('wght', 500)],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -83,18 +90,15 @@ class StatusUpdateWidget extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.primary,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(500.00),
+                border: Border.all(color: Colors.grey.shade600, width: 1.5),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Update Status',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  Text('Update Status'),
                   SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down, color: Colors.white),
+                  Icon(Icons.keyboard_arrow_down),
                 ],
               ),
             ),
@@ -107,7 +111,7 @@ class StatusUpdateWidget extends StatelessWidget {
   Future<void> _updateStatus(BuildContext context, String status) async {
     try {
       await AdminService.updateTicketStatus(ticket.ticketId, status);
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

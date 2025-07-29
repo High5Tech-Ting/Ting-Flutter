@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ting/core/models/support_ticket_model.dart';
 import 'package:ting/core/services/admin_service.dart';
-import 'package:ting/shared/theme.dart';
+import 'package:ting/shared/widgets/primary_button.dart';
 
 class AssigneeSection extends StatefulWidget {
   final SupportTicket ticket;
@@ -22,10 +23,23 @@ class _AssigneeSectionState extends State<AssigneeSection> {
   bool _isLoading = false;
   String? _selectedUserId;
 
+  String? _assignedUserProfileImageUrl;
+  String? _assignedUserEmail;
+  bool _isLoadingAssignedUser = false;
+
   @override
   void initState() {
     super.initState();
     _loadUsers();
+    _loadAssignedUserData();
+  }
+
+  @override
+  void didUpdateWidget(AssigneeSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ticket.assignedTo != widget.ticket.assignedTo) {
+      _loadAssignedUserData();
+    }
   }
 
   Future<void> _loadUsers() async {
@@ -42,6 +56,51 @@ class _AssigneeSectionState extends State<AssigneeSection> {
     } catch (e) {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadAssignedUserData() async {
+    if (widget.ticket.assignedTo == null) {
+      setState(() {
+        _assignedUserProfileImageUrl = null;
+        _assignedUserEmail = null;
+        _isLoadingAssignedUser = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingAssignedUser = true;
+    });
+
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.ticket.assignedTo!)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          _assignedUserProfileImageUrl =
+              userData['profilePictureUrl'] ?? userData['avatarUrl'];
+          _assignedUserEmail = userData['email'] ?? '';
+          _isLoadingAssignedUser = false;
+        });
+      } else {
+        setState(() {
+          _assignedUserProfileImageUrl = null;
+          _assignedUserEmail = '';
+          _isLoadingAssignedUser = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading assigned user data: $e');
+      setState(() {
+        _assignedUserProfileImageUrl = null;
+        _assignedUserEmail = '';
+        _isLoadingAssignedUser = false;
       });
     }
   }
@@ -83,100 +142,69 @@ class _AssigneeSectionState extends State<AssigneeSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Assignment',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            if (widget.ticket.assignedTo != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.person, color: Colors.green[700]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Assigned to: ${widget.ticket.assignedToName}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[800],
-                            ),
-                          ),
-                          if (widget.ticket.assignedAt != null)
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Assignees',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+
+          if (widget.ticket.assignedTo != null) ...[
+            _isLoadingAssignedUser
+                ? const Center(child: CircularProgressIndicator())
+                : Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundImage: _assignedUserProfileImageUrl != null
+                            ? NetworkImage(_assignedUserProfileImageUrl!)
+                            : NetworkImage(
+                                "https://avatar.iran.liara.run/public/?username=${widget.ticket.assignedToName ?? 'User'}",
+                              ),
+                        backgroundColor: Colors.grey.shade300,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              'Assigned on: ${_formatDate(widget.ticket.assignedAt!.toDate())}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.green[600],
+                              widget.ticket.assignedToName ?? 'User',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-                    if (AdminService.isCurrentUserAdmin())
-                      IconButton(
-                        onPressed: () => _showAssignDialog(),
-                        icon: const Icon(Icons.edit),
-                        tooltip: 'Reassign',
-                      ),
-                  ],
-                ),
-              ),
-            ] else if (AdminService.isCurrentUserAdmin()) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.person_outline, color: Colors.orange[700]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Not assigned yet',
-                        style: TextStyle(
-                          color: Colors.orange[800],
-                          fontWeight: FontWeight.w500,
+                            Text(
+                              _assignedUserEmail ?? 'email',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            if (widget.ticket.assignedAt != null)
+                              Text(
+                                'Assigned on: ${_formatDate(widget.ticket.assignedAt!.toDate())}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                          ],
                         ),
                       ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => _showAssignDialog(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Assign'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                      if (AdminService.isCurrentUserAdmin())
+                        IconButton(
+                          onPressed: () => _showAssignDialog(),
+                          icon: const Icon(Icons.edit),
+                          tooltip: 'Reassign',
+                        ),
+                    ],
+                  ),
+          ] else if (AdminService.isCurrentUserAdmin()) ...[
+            PrimaryButton(
+              onPressed: () => _showAssignDialog(),
+              child: const Text('Assign a user to this ticket'),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
