@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
+import 'package:ting/features/appointments/presentation/screens/calendar_view_screen.dart'; //lect view checked
+import 'package:ting/features/appointments/presentation/screens/student_book_slot_screen.dart';
+
+
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -57,6 +61,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {},
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
+            ListTile(
+              leading: const Icon(Icons.schedule_outlined),
+              title: const Text('Appointment Schedule'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    //builder: (context) => const CalendarViewScreen(),
+                    builder: (context) => const StudentBookSlotScreen(),
+                  ),
+                );
+              },
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            ),
+
             ListTile(
               leading: const Icon(Icons.support_agent_outlined),
               title: const Text('Support Tickets'),
