@@ -357,7 +357,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             (data['lastMessage'] as String).isNotEmpty);
                       }).toList();
 
-                      // TODO: Temp Sort conversations by lastMessageTime
                       filteredConvDocs.sort((a, b) {
                         final aData = a.data() as Map<String, dynamic>;
                         final bData = b.data() as Map<String, dynamic>;
@@ -404,7 +403,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               final isOnline = data['online'] ?? false;
                               final userName = data['displayName'] ?? "No Name";
                               final avatarUrl =
-                                  data['avatarUrl'] ??
+                                  data['profilePictureUrl'] ??
                                   "https://avatar.iran.liara.run/public/?username=${data['uid']}";
                               // Find the conversation doc for this user
                               final convDoc = convDocs.firstWhere(
