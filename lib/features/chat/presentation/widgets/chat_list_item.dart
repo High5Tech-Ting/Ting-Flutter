@@ -63,11 +63,15 @@ class ChatListItem extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        userName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      Expanded(
+                        child: Text(
+                          userName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       Text(
@@ -81,7 +85,12 @@ class ChatListItem extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Text(lastMessage, style: TextStyle(color: Colors.grey)),
+                  Text(
+                    lastMessage,
+                    style: TextStyle(color: Colors.grey),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                   newMessages > 0
                       ? Text(
                           '$newMessages new messages',

@@ -60,11 +60,15 @@ class GroupListItem extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        groupName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      Expanded(
+                        child: Text(
+                          groupName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       Text(
@@ -78,7 +82,12 @@ class GroupListItem extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Text(lastMessage, style: TextStyle(color: Colors.grey)),
+                  Text(
+                    lastMessage,
+                    style: TextStyle(color: Colors.grey),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                   newMessages > 0
                       ? Text(
                           '$newMessages new messages',
