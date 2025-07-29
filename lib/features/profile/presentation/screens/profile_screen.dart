@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
 import 'package:ting/features/support/presentation/screens/support_tickets_screen.dart';
+import 'package:ting/features/admin/presentation/screens/admin_dashboard_screen.dart';
+import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -92,6 +94,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
+            if (AdminService.isAdmin(user?.uid ?? ''))
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: const Text('Admin Dashboard'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminDashboardScreen(),
+                    ),
+                  );
+                },
+                trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),

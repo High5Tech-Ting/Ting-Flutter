@@ -34,8 +34,15 @@ class _TicketCardState extends State<TicketCard> {
       final profilePictureUrl = await UserService.getProfilePictureUrl(
         widget.ticket.userId,
       );
+      
+      // Priority: uploaded profile picture -> avatarUrl -> fallback
+      String? finalAvatarUrl = profilePictureUrl;
+      if (finalAvatarUrl == null || finalAvatarUrl.isEmpty) {
+        finalAvatarUrl = user?.avatarUrl;
+      }
+      
       setState(() {
-        profileImageUrl = profilePictureUrl;
+        profileImageUrl = finalAvatarUrl;
         userName = user?.displayName ?? 'User';
         isLoading = false;
       });

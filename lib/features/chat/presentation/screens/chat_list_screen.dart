@@ -404,6 +404,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               final isOnline = data['online'] ?? false;
                               final userName = data['displayName'] ?? "No Name";
                               final avatarUrl =
+                                  data['profilePictureUrl'] ??
                                   data['avatarUrl'] ??
                                   "https://avatar.iran.liara.run/public/?username=${data['uid']}";
                               // Find the conversation doc for this user
@@ -526,6 +527,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           final isOnline = data['online'] ?? false;
                           final userName = data['displayName'] ?? "No Name";
                           final avatarUrl =
+                              data['profilePictureUrl'] ??
                               data['avatarUrl'] ??
                               "https://avatar.iran.liara.run/public/?username=$userName";
                           return ChatListItem(
