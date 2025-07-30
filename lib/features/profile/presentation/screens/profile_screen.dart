@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
 import 'package:ting/features/support/presentation/screens/support_tickets_screen.dart';
+import 'package:ting/features/appointments/presentation/screens/appointments_screen.dart';
 import 'package:ting/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
@@ -79,8 +80,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today),
-              title: const Text('Calendar'),
-              onTap: () {},
+              title: const Text('Appoinments'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AppointmentsScreen(),
+                  ),
+                );
+              },
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
             ListTile(
