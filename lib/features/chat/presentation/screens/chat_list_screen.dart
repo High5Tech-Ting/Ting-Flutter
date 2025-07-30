@@ -1,12 +1,13 @@
 import 'package:animated_icon/animated_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:ting/core/services/ai_engine.dart';
+import 'package:ting/core/services/types.dart';
 import 'package:ting/features/chat/presentation/screens/chat_screen.dart';
 import 'package:ting/features/chat/presentation/widgets/chat_list_item.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:ting/core/services/api_client.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -171,7 +172,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     );
                   }
 
-                  // Extract message texts for API call
                   final messageTexts = messages
                       .map((doc) {
                         final data = doc.data() as Map<String, dynamic>;
@@ -258,8 +258,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.auto_awesome,
-                                    color: Colors.purple[600],
+                                    Icons.auto_awesome_outlined,
+                                    color: AppTheme.primary,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 8),
@@ -268,7 +268,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.purple[600],
+                                      color: AppTheme.primary,
                                     ),
                                   ),
                                 ],
@@ -299,7 +299,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<ChatSummaryResponse> _getSummary(List<String> messages) async {
     try {
-      return await ApiClient.instance.summarizeMessages(messages);
+      return await AiEngine.summarizeMessages(messages);
     } catch (e) {
       throw Exception('Failed to get summary: $e');
     }

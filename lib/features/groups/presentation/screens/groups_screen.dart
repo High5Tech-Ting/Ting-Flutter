@@ -3,15 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:ting/core/models/group_model.dart';
 import 'package:ting/core/models/broadcast_model.dart';
+import 'package:ting/core/services/ai_engine.dart';
 import 'package:ting/core/services/group_chat_service.dart';
 import 'package:ting/core/services/broadcast_service.dart';
+import 'package:ting/core/services/types.dart';
 import 'package:ting/shared/theme.dart';
 import 'create_group_screen.dart';
 import 'create_broadcast_screen.dart';
 import 'group_chat_screen.dart';
 import 'broadcast_chat_screen.dart';
 import 'package:animated_icon/animated_icon.dart';
-import 'package:ting/core/services/api_client.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -22,7 +23,7 @@ class GroupsScreen extends StatefulWidget {
 
 class _GroupsScreenState extends State<GroupsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  bool _showGroups = true; // true for groups, false for broadcasts
+  bool _showGroups = true;
 
   @override
   void initState() {
@@ -291,8 +292,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                   Row(
                                     children: [
                                       Icon(
-                                        Icons.auto_awesome,
-                                        color: Colors.purple[600],
+                                        Icons.auto_awesome_outlined,
+                                        color: AppTheme.primary,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
@@ -301,7 +302,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.purple[600],
+                                          color: AppTheme.primary,
                                         ),
                                       ),
                                     ],
@@ -435,7 +436,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   Future<ChatSummaryResponse> _getGroupSummary(List<String> messages) async {
     try {
-      return await ApiClient.instance.summarizeMessages(messages);
+      return await AiEngine.summarizeMessages(messages);
     } catch (e) {
       throw Exception('Failed to get summary: $e');
     }

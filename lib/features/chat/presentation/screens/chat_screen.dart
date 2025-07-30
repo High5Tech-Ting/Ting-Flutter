@@ -1,3 +1,4 @@
+import 'package:animated_icon/animated_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:ting/features/chat/presentation/widgets/chat_input_widget.dart';
@@ -7,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ting/core/services/notification_service.dart';
 import 'package:ting/shared/services/attachment_service.dart';
 import 'package:intl/intl.dart';
+import 'package:ting/core/services/ai_engine.dart';
+import 'package:ting/core/services/types.dart';
 
 class ChatScreen extends StatefulWidget {
   final String userName;
@@ -305,6 +308,193 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Future<void> generateMessageDraft() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            spacing: 8.0,
+            children: [
+              Icon(Icons.auto_awesome_outlined, color: AppTheme.primary),
+              Text(
+                'Generating Message Draft',
+                style: AppTheme.bodyLarge.copyWith(fontSize: 20),
+              ),
+            ],
+          ),
+          content: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: AnimateIcon(
+              key: UniqueKey(),
+              onTap: () {},
+              iconType: IconType.continueAnimation,
+              height: 70,
+              width: 70,
+              color: AppTheme.primary,
+              animateIcon: AnimateIcons.chatMessage,
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final recentMessages = await _getRecentMessagesForAI();
+
+      final currentUserDoc = await _firestore
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+      final otherUserDoc = await _firestore
+          .collection('users')
+          .doc(otherUserId)
+          .get();
+
+      String senderRole = 'student';
+      String receiverRole = 'student';
+
+      if (currentUserDoc.exists) {
+        final userData = currentUserDoc.data();
+        if (userData?['userType'] != null) {
+          senderRole = userData?['userType'];
+        }
+      }
+
+      if (otherUserDoc.exists) {
+        final userData = otherUserDoc.data();
+        if (userData?['userType'] != null) {
+          receiverRole = userData?['userType'];
+        }
+      }
+
+      final messageContext = MessageContext(
+        senderRole: senderRole,
+        receiverRole: receiverRole,
+      );
+
+      print('recentMessages: $recentMessages');
+      print('messageContext: ${messageContext.toJson()}');
+
+      final response = await AiEngine.generateMessageDraft(
+        recentMessages,
+        messageContext,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        setState(() {
+          _messageController.text = response;
+        });
+      }
+    } catch (e) {
+      print(e.toString());
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating message draft: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<List<Map<String, String>>> _getRecentMessagesForAI() async {
+    try {
+      final messagesQuery = await _firestore
+          .collection('conversations')
+          .doc(conversationId)
+          .collection('messages')
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .get();
+
+      if (messagesQuery.docs.isEmpty) {
+        return [];
+      }
+
+      List<Map<String, String>> formattedMessages = [];
+
+      if (messagesQuery.docs.length < 10 && messagesQuery.docs.isNotEmpty) {
+        final lastMessageTime =
+            messagesQuery.docs.first.data()['timestamp'] as Timestamp?;
+        if (lastMessageTime != null) {
+          final lastMessageDate = lastMessageTime.toDate();
+          final dayStart = DateTime(
+            lastMessageDate.year,
+            lastMessageDate.month,
+            lastMessageDate.day,
+          );
+          final dayEnd = dayStart.add(const Duration(days: 1));
+
+          final dayMessagesQuery = await _firestore
+              .collection('conversations')
+              .doc(conversationId)
+              .collection('messages')
+              .where(
+                'timestamp',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(dayStart),
+              )
+              .where('timestamp', isLessThan: Timestamp.fromDate(dayEnd))
+              .orderBy('timestamp', descending: false)
+              .get();
+
+          for (final doc in dayMessagesQuery.docs) {
+            final messageData = doc.data();
+            final senderId = messageData['senderId'] as String?;
+            final text = messageData['text'] as String?;
+
+            if (senderId != null && text != null && text.isNotEmpty) {
+              final senderName = await _getUserDisplayName(senderId);
+              formattedMessages.add({'sender': senderName, 'text': text});
+            }
+          }
+        }
+      } else {
+        final reversedDocs = messagesQuery.docs.reversed.toList();
+
+        for (final doc in reversedDocs) {
+          final messageData = doc.data();
+          final senderId = messageData['senderId'] as String?;
+          final text = messageData['text'] as String?;
+
+          if (senderId != null && text != null && text.isNotEmpty) {
+            final senderName = await _getUserDisplayName(senderId);
+            formattedMessages.add({'sender': senderName, 'text': text});
+          }
+        }
+      }
+
+      return formattedMessages;
+    } catch (e) {
+      print('Error getting recent messages for AI: $e');
+      return [];
+    }
+  }
+
+  Future<String> _getUserDisplayName(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        return userData?['displayName'] as String? ?? 'Unknown User';
+      }
+      return 'Unknown User';
+    } catch (e) {
+      print('Error getting user display name: $e');
+      return 'Unknown User';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -361,6 +551,18 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            style: ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(AppTheme.primary),
+            ),
+            onPressed: () async {
+              await generateMessageDraft();
+            },
+            icon: Icon(Icons.auto_awesome_outlined, color: AppTheme.surface),
+          ),
+          SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
