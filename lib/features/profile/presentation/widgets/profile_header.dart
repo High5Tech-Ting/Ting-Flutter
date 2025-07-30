@@ -21,10 +21,8 @@ class ProfileHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: AppTheme.primary,
-      padding: const EdgeInsets.fromLTRB(16, 60, 16, 60),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.fromLTRB(16, 44, 16, 44),
+      child: Column(
         children: [
           Container(
             decoration: BoxDecoration(
@@ -33,37 +31,29 @@ class ProfileHeader extends StatelessWidget {
             ),
             child: ProfileAvatar(size: 100, isEditable: true),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  userEmail,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-                // TODO Student ID and Batch No
-                const SizedBox(height: 4),
-                Text(
-                  "Student ID: $studentId",
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Batch No: $batchNo",
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ],
+          Text(
+            userName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            userEmail,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          // TODO Student ID and Batch No
+          const SizedBox(height: 4),
+          Text(
+            "Student ID: $studentId",
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Batch No: $batchNo",
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ],
       ),
