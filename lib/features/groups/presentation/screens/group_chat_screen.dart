@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:ting/core/services/ai_engine.dart';
 import 'package:ting/core/services/group_chat_service.dart';
 import 'package:ting/core/models/group_model.dart';
+import 'package:ting/core/services/types.dart';
 import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:ting/features/chat/presentation/widgets/chat_input_widget.dart';
 import 'package:ting/shared/theme.dart';
@@ -67,6 +69,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       _isSending = true;
     });
 
+    ModeratedMessageResponse aiResponse = await AiEngine.moderateMessage(
+      messageText,
+    );
+    final String originalText = messageText;
+    messageText = aiResponse.isAppropriate
+        ? messageText
+        : 'This message violates the community guidelines.';
+
     try {
       if (attachment != null) {
         // Send message with attachment
@@ -79,6 +89,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           replyToMessageId: _replyToMessageId,
           replyToText: _replyToText,
           replyToSenderId: _replyToSenderId,
+          originalText: originalText,
+          isAppropriate: aiResponse.isAppropriate,
         );
       } else {
         // Send text only message
@@ -88,6 +100,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           replyToMessageId: _replyToMessageId,
           replyToText: _replyToText,
           replyToSenderId: _replyToSenderId,
+          originalText: originalText,
+          isAppropriate: aiResponse.isAppropriate,
         );
       }
 
@@ -422,6 +436,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         message: text,
                         isSender: isMe,
                         time: formatTime(timestamp),
+                        isAppropriate: isAppropriate,
                         statusIcon:
                             null, // Group messages don't show read status
                         conversationId: widget.groupId,

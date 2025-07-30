@@ -184,6 +184,14 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage(String messageText, AttachmentFile? attachment) async {
     if (messageText.isEmpty && attachment == null) return;
 
+    ModeratedMessageResponse aiResponse = await AiEngine.moderateMessage(
+      messageText,
+    );
+    String originalText = messageText;
+    messageText = aiResponse.isAppropriate
+        ? messageText
+        : 'This message violates the community guidelines.';
+
     String senderId = currentUserId;
     String receiverId = otherUserId;
     setTypingStatus(false);
@@ -243,6 +251,8 @@ class _ChatScreenState extends State<ChatScreen> {
         'fileUrl': fileUrl,
         'fileType': fileType,
         'fileName': fileName,
+        'originalText': originalText,
+        'isAppropriate': aiResponse.isAppropriate,
       });
 
       DocumentSnapshot convDoc = await _firestore
@@ -688,6 +698,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           message: text,
                           isSender: isMe,
                           time: formatTime(timestamp),
+                          isAppropriate: messageData['isAppropriate'] ?? true,
                           statusIcon: getMessageStatusIcon(messageData),
                           conversationId: conversationId,
                           messageId: messageData['messageId']?.toString() ?? '',

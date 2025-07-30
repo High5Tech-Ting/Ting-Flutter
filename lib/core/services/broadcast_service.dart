@@ -82,6 +82,8 @@ class BroadcastService {
     String? fileUrl,
     String? fileType,
     String? fileName,
+    required String originalText,
+    required bool isAppropriate,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('User not authenticated');
@@ -105,6 +107,8 @@ class BroadcastService {
       fileUrl: fileUrl,
       fileType: fileType,
       fileName: fileName,
+      isAppropriate: isAppropriate,
+      originalText: originalText,
     );
 
     await messageRef.set(message.toMap());
@@ -126,6 +130,8 @@ class BroadcastService {
       fileUrl: fileUrl,
       fileType: fileType,
       fileName: fileName,
+      originalText: originalText,
+      isAppropriate: isAppropriate,
     );
   }
 
@@ -136,6 +142,8 @@ class BroadcastService {
     required File file,
     required String fileName,
     required String fileType,
+    required String originalText,
+    required bool isAppropriate,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('User not authenticated');
@@ -165,6 +173,8 @@ class BroadcastService {
       fileUrl: fileUrl,
       fileType: fileType,
       fileName: fileName,
+      originalText: originalText,
+      isAppropriate: isAppropriate,
     );
   }
 
@@ -175,6 +185,8 @@ class BroadcastService {
     String? fileUrl,
     String? fileType,
     String? fileName,
+    required String originalText,
+    required bool isAppropriate,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) return;
@@ -190,6 +202,8 @@ class BroadcastService {
           fileUrl: fileUrl,
           fileType: fileType,
           fileName: fileName,
+          isAppropriate: isAppropriate,
+          originalText: originalText,
         );
       }
     }
@@ -206,6 +220,8 @@ class BroadcastService {
               fileUrl: fileUrl,
               fileType: fileType,
               fileName: fileName,
+              isAppropriate: isAppropriate,
+              originalText: originalText,
             );
           }
         }
@@ -220,6 +236,8 @@ class BroadcastService {
     String? fileUrl,
     String? fileType,
     String? fileName,
+    required String originalText,
+    required bool isAppropriate,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) return;
@@ -254,6 +272,8 @@ class BroadcastService {
       'fileUrl': fileUrl,
       'fileType': fileType,
       'fileName': fileName,
+      'originalText': originalText,
+      'isAppropriate': isAppropriate,
     });
 
     // Update conversation metadata

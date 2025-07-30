@@ -12,6 +12,8 @@ class Message {
   final String? replyToMessageId;
   final String? replyToText;
   final String? replyToSenderId;
+  final String? originalText;
+  final bool isAppropriate;
 
   Message({
     required this.messageId,
@@ -25,23 +27,27 @@ class Message {
     this.replyToMessageId,
     this.replyToText,
     this.replyToSenderId,
+    this.originalText,
+    required this.isAppropriate,
   });
 
   factory Message.fromMap(Map<String, dynamic> data) {
     return Message(
-        messageId: data['messageId'] as String? ?? 'unknown-id',
-        senderId: data['senderId'] as String? ?? 'unknown-sender',
-        receiverId: data['receiverId'] as String? ?? 'unknown-receiver',
-        text: data['text'] as String? ?? 'No message provided',
-        timestamp: data['timestamp'] is Timestamp
-            ? data['timestamp'] as Timestamp
-            : Timestamp.now(),
-        status: data['status'] as String? ?? 'unknown',
-        deletedFor: List<String>.from(data['deletedFor'] ?? []),
-        isDeletedForEveryone: data['isDeletedForEveryone'] ?? false,
-        replyToMessageId: data['replyToMessageId'] as String?,
-        replyToText: data['replyToText'] as String?,
-        replyToSenderId: data['replyToSenderId'] as String?,
+      messageId: data['messageId'] as String? ?? 'unknown-id',
+      senderId: data['senderId'] as String? ?? 'unknown-sender',
+      receiverId: data['receiverId'] as String? ?? 'unknown-receiver',
+      text: data['text'] as String? ?? 'No message provided',
+      timestamp: data['timestamp'] is Timestamp
+          ? data['timestamp'] as Timestamp
+          : Timestamp.now(),
+      status: data['status'] as String? ?? 'unknown',
+      deletedFor: List<String>.from(data['deletedFor'] ?? []),
+      isDeletedForEveryone: data['isDeletedForEveryone'] ?? false,
+      replyToMessageId: data['replyToMessageId'] as String?,
+      replyToText: data['replyToText'] as String?,
+      replyToSenderId: data['replyToSenderId'] as String?,
+      originalText: data['originalText'] as String?,
+      isAppropriate: data['isAppropriate'] ?? false,
     );
   }
 
@@ -58,6 +64,8 @@ class Message {
       'replyToMessageId': replyToMessageId,
       'replyToText': replyToText,
       'replyToSenderId': replyToSenderId,
+      'originalText': originalText,
+      'isAppropriate': isAppropriate,
     };
   }
 }

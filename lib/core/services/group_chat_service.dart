@@ -108,13 +108,11 @@ class GroupChatService implements BaseMessageService {
     String? fileUrl,
     String? fileType,
     String? fileName,
+    required String? originalText,
+    required bool isAppropriate,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('User not authenticated');
-
-    ModeratedMessageResponse aiResponse = await AiEngine.moderateMessage(
-      messageText,
-    );
 
     final messageRef = _firestore
         .collection('groups')
@@ -126,18 +124,16 @@ class GroupChatService implements BaseMessageService {
       messageId: messageRef.id,
       senderId: currentUser.uid,
       groupId: groupId,
-      text: aiResponse.isAppropriate
-          ? messageText
-          : "This message violates the community guidelines",
+      text: messageText,
       timestamp: Timestamp.now(),
-      isAppropriate: aiResponse.isAppropriate,
+      isAppropriate: isAppropriate,
       replyToMessageId: replyToMessageId,
       replyToText: replyToText,
       replyToSenderId: replyToSenderId,
       fileUrl: fileUrl,
       fileType: fileType,
       fileName: fileName,
-      originalText: messageText,
+      originalText: originalText,
     );
 
     await messageRef.set(message.toMap());
@@ -162,14 +158,10 @@ class GroupChatService implements BaseMessageService {
         }
       }
 
-      String lastMessagePreview;
-      if (aiResponse.isAppropriate) {
-        lastMessagePreview = messageText.isNotEmpty
-            ? messageText
-            : '${fileType?.toUpperCase() ?? 'File'} attachment';
-      } else {
-        lastMessagePreview = "This message violates the community guidelines";
-      }
+      String lastMessagePreview = messageText.isNotEmpty
+          ? messageText
+          : '${fileType?.toUpperCase() ?? 'File'} attachment';
+
       await groupRef.update({
         'lastMessage': lastMessagePreview,
         'lastMessageTime': FieldValue.serverTimestamp(),
@@ -237,6 +229,8 @@ class GroupChatService implements BaseMessageService {
     String? replyToMessageId,
     String? replyToText,
     String? replyToSenderId,
+    required String originalText,
+    required bool isAppropriate,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('User not authenticated');
@@ -269,6 +263,8 @@ class GroupChatService implements BaseMessageService {
       fileUrl: fileUrl,
       fileType: fileType,
       fileName: fileName,
+      originalText: originalText,
+      isAppropriate: isAppropriate,
     );
   }
 

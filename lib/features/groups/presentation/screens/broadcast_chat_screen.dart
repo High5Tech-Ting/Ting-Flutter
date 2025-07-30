@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:ting/core/services/ai_engine.dart';
 import 'package:ting/core/services/broadcast_service.dart';
+import 'package:ting/core/services/types.dart';
 import 'package:ting/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:ting/features/chat/presentation/widgets/chat_input_widget.dart';
 import 'package:ting/shared/theme.dart';
@@ -52,25 +54,37 @@ class _BroadcastChatScreenState extends State<BroadcastChatScreen> {
   void _sendMessage(String messageText, AttachmentFile? attachment) async {
     if (messageText.isEmpty && attachment == null) return;
 
+    ModeratedMessageResponse aiResponse = await AiEngine.moderateMessage(
+      messageText,
+    );
+
+    String originalText = messageText;
+    messageText = aiResponse.isAppropriate
+        ? messageText
+        : 'This message violates the community guidelines.';
+
     setState(() {
       _isSending = true;
     });
 
     try {
       if (attachment != null) {
-        // Send message with attachment
         await BroadcastService.sendBroadcastMessageWithAttachment(
           broadcastId: widget.broadcastId,
           messageText: messageText,
           file: attachment.file,
           fileName: attachment.fileName,
           fileType: attachment.fileType,
+          originalText: originalText,
+          isAppropriate: aiResponse.isAppropriate,
         );
       } else {
         // Send text only message
         await BroadcastService.sendBroadcastMessage(
           broadcastId: widget.broadcastId,
           messageText: messageText,
+          originalText: originalText,
+          isAppropriate: aiResponse.isAppropriate,
         );
       }
 
@@ -293,6 +307,7 @@ class _BroadcastChatScreenState extends State<BroadcastChatScreen> {
                             null, // Broadcast messages don't show read status
                         conversationId: widget.broadcastId,
                         messageId: messageData['messageId']?.toString() ?? '',
+                        isAppropriate: messageData['isAppropriate'],
                         senderId: senderId,
                         currentUserId: currentUserId,
                         isDeletedForEveryone: false,

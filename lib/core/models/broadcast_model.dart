@@ -95,6 +95,8 @@ class BroadcastMessage {
   final String? fileName;
   final List<String> deliveredTo;
   final List<String> readBy;
+  final String? originalText;
+  final bool isAppropriate;
 
   BroadcastMessage({
     required this.messageId,
@@ -107,6 +109,8 @@ class BroadcastMessage {
     this.fileName,
     this.deliveredTo = const [],
     this.readBy = const [],
+    this.originalText,
+    required this.isAppropriate,
   });
 
   factory BroadcastMessage.fromMap(Map<String, dynamic> data) {
@@ -123,6 +127,8 @@ class BroadcastMessage {
       fileName: data['fileName'] as String?,
       deliveredTo: List<String>.from(data['deliveredTo'] ?? []),
       readBy: List<String>.from(data['readBy'] ?? []),
+      originalText: data['originalText'] as String?,
+      isAppropriate: data['isAppropriate'] as bool? ?? true,
     );
   }
 
@@ -138,6 +144,8 @@ class BroadcastMessage {
       'fileName': fileName,
       'deliveredTo': deliveredTo,
       'readBy': readBy,
+      'originalText': originalText,
+      'isAppropriate': isAppropriate,
     };
   }
 }

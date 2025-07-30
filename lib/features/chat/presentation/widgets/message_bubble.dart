@@ -24,6 +24,7 @@ class MessageBubble extends StatefulWidget {
   final String? fileUrl;
   final String? fileType;
   final String? fileName;
+  final bool isAppropriate;
 
   const MessageBubble({
     super.key,
@@ -44,6 +45,7 @@ class MessageBubble extends StatefulWidget {
     this.fileUrl,
     this.fileType,
     this.fileName,
+    required this.isAppropriate,
   });
 
   @override
@@ -202,6 +204,31 @@ class _MessageBubbleState extends State<MessageBubble> {
               ),
               child: Text(
                 "This message was deleted",
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (!widget.isAppropriate) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          mainAxisAlignment: widget.isSender
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                widget.message,
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
                   color: Colors.grey[700],
