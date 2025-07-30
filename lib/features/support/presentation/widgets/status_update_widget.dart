@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ting/core/models/support_ticket_model.dart';
 import 'package:ting/core/services/admin_service.dart';
-import 'package:ting/shared/theme.dart';
 
 class StatusUpdateWidget extends StatelessWidget {
   final SupportTicket ticket;
