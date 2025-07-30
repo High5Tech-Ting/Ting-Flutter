@@ -38,13 +38,13 @@ class AppointmentStatusUpdateWidget extends StatelessWidget {
             onSelected: (status) => _updateStatus(context, status),
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'resolved',
+                value: 'booked',
                 child: Row(
                   children: [
                     Icon(Icons.check_circle, color: Colors.green),
                     SizedBox(width: 8),
                     Text(
-                      'Mark as Resolved',
+                      'Mark as Booked',
                       style: TextStyle(
                         fontFamily: "NunitoSans",
                         fontVariations: [FontVariation('wght', 500)],
@@ -54,13 +54,13 @@ class AppointmentStatusUpdateWidget extends StatelessWidget {
                 ),
               ),
               const PopupMenuItem(
-                value: 'closed',
+                value: 'done',
                 child: Row(
                   children: [
-                    Icon(Icons.cancel, color: Colors.red),
+                    Icon(Icons.done_all, color: Colors.blue),
                     SizedBox(width: 8),
                     Text(
-                      'Mark as Closed',
+                      'Mark as Done',
                       style: TextStyle(
                         fontFamily: "NunitoSans",
                         fontVariations: [FontVariation('wght', 500)],
@@ -115,11 +115,11 @@ class AppointmentStatusUpdateWidget extends StatelessWidget {
         case 'pending':
           appointmentStatus = AppointmentStatus.pending;
           break;
-        case 'resolved':
-          appointmentStatus = AppointmentStatus.resolved;
+        case 'booked':
+          appointmentStatus = AppointmentStatus.booked;
           break;
-        case 'closed':
-          appointmentStatus = AppointmentStatus.closed;
+        case 'done':
+          appointmentStatus = AppointmentStatus.done;
           break;
         default:
           return;

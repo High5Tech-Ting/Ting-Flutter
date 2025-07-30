@@ -263,10 +263,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
     switch (status) {
       case AppointmentStatus.pending:
         return Colors.orange;
-      case AppointmentStatus.resolved:
+      case AppointmentStatus.booked:
         return Colors.green;
-      case AppointmentStatus.closed:
-        return Colors.red;
+      case AppointmentStatus.done:
+        return Colors.blue;
     }
   }
 
@@ -274,10 +274,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
     switch (status) {
       case AppointmentStatus.pending:
         return Icons.schedule;
-      case AppointmentStatus.resolved:
+      case AppointmentStatus.booked:
         return Icons.check_circle;
-      case AppointmentStatus.closed:
-        return Icons.cancel;
+      case AppointmentStatus.done:
+        return Icons.done_all;
     }
   }
 

@@ -290,7 +290,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             ),
 
             // Message input - Fixed at bottom
-            if (_appointment!.status != AppointmentStatus.closed)
+            if (_appointment!.status != AppointmentStatus.done)
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -366,10 +366,10 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     switch (status) {
       case AppointmentStatus.pending:
         return Colors.orange;
-      case AppointmentStatus.resolved:
+      case AppointmentStatus.booked:
         return Colors.green;
-      case AppointmentStatus.closed:
-        return Colors.red;
+      case AppointmentStatus.done:
+        return Colors.blue;
     }
   }
 

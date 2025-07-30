@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum AppointmentStatus { pending, resolved, closed }
+enum AppointmentStatus { pending, booked, done }
 
 class Appointment {
   final String appointmentId;
@@ -71,10 +71,10 @@ class Appointment {
     switch (status) {
       case 'pending':
         return AppointmentStatus.pending;
-      case 'resolved':
-        return AppointmentStatus.resolved;
-      case 'closed':
-        return AppointmentStatus.closed;
+      case 'booked':
+        return AppointmentStatus.booked;
+      case 'done':
+        return AppointmentStatus.done;
       default:
         return AppointmentStatus.pending;
     }
