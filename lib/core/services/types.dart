@@ -48,3 +48,31 @@ class MessageContext {
     );
   }
 }
+
+class ModeratedMessageResponse {
+  final bool isAppropriate;
+  final bool success;
+  final String message;
+
+  ModeratedMessageResponse({
+    required this.isAppropriate,
+    required this.success,
+    required this.message,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'is_appropriate': isAppropriate,
+      'message': message,
+      'success': success,
+    };
+  }
+
+  factory ModeratedMessageResponse.fromJson(Map<String, dynamic> json) {
+    return ModeratedMessageResponse(
+      isAppropriate: json['is_appropriate'] ?? false,
+      message: json['message'] ?? '',
+      success: json['success'] ?? false,
+    );
+  }
+}

@@ -96,12 +96,14 @@ class GroupMessage {
   final String status;
   final List<String> deletedFor;
   final bool isDeletedForEveryone;
+  final bool isAppropriate;
   final String? replyToMessageId;
   final String? replyToText;
   final String? replyToSenderId;
   final String? fileUrl;
   final String? fileType;
   final String? fileName;
+  final String? originalText;
 
   GroupMessage({
     required this.messageId,
@@ -109,6 +111,7 @@ class GroupMessage {
     required this.groupId,
     required this.text,
     required this.timestamp,
+    required this.isAppropriate,
     this.status = 'sent',
     this.deletedFor = const [],
     this.isDeletedForEveryone = false,
@@ -118,6 +121,7 @@ class GroupMessage {
     this.fileUrl,
     this.fileType,
     this.fileName,
+    this.originalText,
   });
 
   factory GroupMessage.fromMap(Map<String, dynamic> data) {
@@ -129,6 +133,7 @@ class GroupMessage {
       timestamp: data['timestamp'] is Timestamp
           ? data['timestamp'] as Timestamp
           : Timestamp.now(),
+      isAppropriate: data['isAppropriate'] ?? false,
       status: data['status'] as String? ?? 'sent',
       deletedFor: List<String>.from(data['deletedFor'] ?? []),
       isDeletedForEveryone: data['isDeletedForEveryone'] ?? false,
@@ -138,6 +143,7 @@ class GroupMessage {
       fileUrl: data['fileUrl'] as String?,
       fileType: data['fileType'] as String?,
       fileName: data['fileName'] as String?,
+      originalText: data['originalText'] as String?,
     );
   }
 
@@ -148,6 +154,7 @@ class GroupMessage {
       'groupId': groupId,
       'text': text,
       'timestamp': timestamp,
+      'isAppropriate': isAppropriate,
       'status': status,
       'deletedFor': deletedFor,
       'isDeletedForEveryone': isDeletedForEveryone,
@@ -157,6 +164,7 @@ class GroupMessage {
       'fileUrl': fileUrl,
       'fileType': fileType,
       'fileName': fileName,
+      'originalText': originalText,
     };
   }
 }

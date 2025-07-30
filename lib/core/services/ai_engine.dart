@@ -32,4 +32,18 @@ class AiEngine {
       throw ApiException('Failed to generate message draft: ${e.toString()}');
     }
   }
+
+  static Future<ModeratedMessageResponse> moderateMessage(
+    String message,
+  ) async {
+    try {
+      final response = await ApiClient.post(
+        '/chat/moderate',
+        data: {'message': message},
+      );
+      return ModeratedMessageResponse.fromJson(response.data);
+    } catch (e) {
+      throw ApiException('Failed to moderate message: ${e.toString()}');
+    }
+  }
 }

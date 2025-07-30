@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ting/core/models/group_model.dart';
 import 'package:ting/core/models/user_model.dart';
+import 'package:ting/core/services/ai_engine.dart';
+import 'package:ting/core/services/types.dart';
 import 'package:ting/shared/services/attachment_service.dart';
 import 'package:ting/shared/services/base_message_service.dart';
 import 'notification_service.dart';
@@ -110,6 +112,10 @@ class GroupChatService implements BaseMessageService {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('User not authenticated');
 
+    ModeratedMessageResponse aiResponse = await AiEngine.moderateMessage(
+      messageText,
+    );
+
     final messageRef = _firestore
         .collection('groups')
         .doc(groupId)
@@ -120,14 +126,18 @@ class GroupChatService implements BaseMessageService {
       messageId: messageRef.id,
       senderId: currentUser.uid,
       groupId: groupId,
-      text: messageText,
+      text: aiResponse.isAppropriate
+          ? messageText
+          : "This message violates the community guidelines",
       timestamp: Timestamp.now(),
+      isAppropriate: aiResponse.isAppropriate,
       replyToMessageId: replyToMessageId,
       replyToText: replyToText,
       replyToSenderId: replyToSenderId,
       fileUrl: fileUrl,
       fileType: fileType,
       fileName: fileName,
+      originalText: messageText,
     );
 
     await messageRef.set(message.toMap());
@@ -152,10 +162,14 @@ class GroupChatService implements BaseMessageService {
         }
       }
 
-      String lastMessagePreview = messageText.isNotEmpty
-          ? messageText
-          : '${fileType?.toUpperCase() ?? 'File'} attachment';
-
+      String lastMessagePreview;
+      if (aiResponse.isAppropriate) {
+        lastMessagePreview = messageText.isNotEmpty
+            ? messageText
+            : '${fileType?.toUpperCase() ?? 'File'} attachment';
+      } else {
+        lastMessagePreview = "This message violates the community guidelines";
+      }
       await groupRef.update({
         'lastMessage': lastMessagePreview,
         'lastMessageTime': FieldValue.serverTimestamp(),

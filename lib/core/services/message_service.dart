@@ -32,7 +32,6 @@ Future<void> deleteMessageForMe(
   String messageId,
   String userId,
 ) async {
-  // Try to delete from conversations first (regular chats)
   try {
     final conversationDoc = await FirebaseFirestore.instance
         .collection('conversations')

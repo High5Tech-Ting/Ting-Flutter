@@ -351,6 +351,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     final senderId = messageData['senderId']?.toString() ?? '';
                     final text = messageData['text']?.toString() ?? '';
                     final isMe = senderId == currentUserId;
+                    final isAppropriate = messageData['isAppropriate'] == true;
                     final bool isDeletedForEveryone =
                         messageData['isDeletedForEveryone'] == true;
                     final List<dynamic> rawDeletedFor =
@@ -388,6 +389,33 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       );
                     } else if (deletedFor.contains(currentUserId)) {
                       // Skip messages deleted for current user
+                    } else if (!isAppropriate) {
+                      messageWidgets.add(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: isMe
+                                ? MainAxisAlignment.end
+                                : MainAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  text,
+                                  style: TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     } else {
                       // Show sender name for group messages (if not current user)
                       Widget messageWidget = MessageBubble(
