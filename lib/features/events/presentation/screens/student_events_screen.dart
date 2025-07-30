@@ -11,52 +11,74 @@ class StudentEventsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Events', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.white),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('My Events', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: 'Active'),
+              Tab(text: 'Expired'),
+            ],
+          ),
+        ),
+        body: StreamBuilder<List<EventModel>>(
+          stream: EventService.getBatchEvents(batchNo),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: \\${snapshot.error}'));
+            }
+            final events = snapshot.data ?? [];
+            final now = DateTime.now();
+            final active = events.where((e) => now.isBefore(e.endTime)).toList();
+            final expired = events.where((e) => now.isAfter(e.endTime)).toList();
+            return TabBarView(
+              children: [
+                _buildEventList(context, active, false),
+                _buildEventList(context, expired, true),
+              ],
+            );
+          },
+        ),
       ),
-      body: StreamBuilder<List<EventModel>>(
-        stream: EventService.getBatchEvents(batchNo),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: \\${snapshot.error}'));
-          }
-          final events = snapshot.data ?? [];
-          if (events.isEmpty) {
-            return const Center(child: Text('No events for your batch.'));
-          }
-          return ListView.builder(
-            itemCount: events.length,
-            padding: const EdgeInsets.all(8.0),
-            itemBuilder: (context, index) {
-              final event = events[index];
-              final now = DateTime.now();
-              final isExpired = now.isAfter(event.endTime);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: EventCard(
-                  event: event,
-                  expired: isExpired,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StudentEventInfoScreen(event: event),
-                      ),
-                    );
-                  },
+    );
+  }
+
+  Widget _buildEventList(BuildContext context, List<EventModel> events, bool expired) {
+    if (events.isEmpty) {
+      return Center(child: Text(expired ? 'No expired events.' : 'No active events.'));
+    }
+    return ListView.builder(
+      itemCount: events.length,
+      padding: const EdgeInsets.all(8.0),
+      itemBuilder: (context, index) {
+        final event = events[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: EventCard(
+            event: event,
+            expired: expired,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StudentEventInfoScreen(event: event),
                 ),
               );
             },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -73,7 +95,7 @@ class StudentEventInfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Event Info', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -112,21 +134,39 @@ class StudentEventInfoScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isExpired ? Colors.red.withOpacity(0.15) : Colors.blue.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isExpired ? 'EXPIRED' : 'ACTIVE',
-                          style: TextStyle(
-                            color: isExpired ? Colors.red : Colors.blue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      isExpired
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'EXPIRED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'ACTIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -160,7 +200,7 @@ class StudentEventInfoScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(isExpired ? Icons.timer_off : Icons.timer, size: 18, color: isExpired ? Colors.red : Colors.blue),
+                      const Icon(Icons.timer, size: 18, color: Colors.grey),
                       const SizedBox(width: 6),
                       Text('Time left: ', style: TextStyle(fontWeight: FontWeight.bold)),
                       Text(timeLeft, style: TextStyle(color: isExpired ? Colors.red : Colors.blue)),

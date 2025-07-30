@@ -24,58 +24,55 @@ class _AdminEventsScreenState extends State<AdminEventsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Events', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: StreamBuilder<List<EventModel>>(
-        stream: EventService.getAdminEvents(adminId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: \\${snapshot.error}'));
-          }
-          final events = snapshot.data ?? [];
-          final now = DateTime.now();
-          final active = events.where((e) => now.isBefore(e.endTime)).toList();
-          final expired = events.where((e) => now.isAfter(e.endTime)).toList();
-          return DefaultTabController(
-            length: 2,
-            child: Column(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Manage Events', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: 'Active'),
+              Tab(text: 'Expired'),
+            ],
+          ),
+        ),
+        body: StreamBuilder<List<EventModel>>(
+          stream: EventService.getAdminEvents(adminId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: \\${snapshot.error}'));
+            }
+            final events = snapshot.data ?? [];
+            final now = DateTime.now();
+            final active = events.where((e) => now.isBefore(e.endTime)).toList();
+            final expired = events.where((e) => now.isAfter(e.endTime)).toList();
+            return TabBarView(
               children: [
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'Active'),
-                    Tab(text: 'Expired'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildEventList(context, active, false),
-                      _buildEventList(context, expired, true),
-                    ],
-                  ),
-                ),
+                _buildEventList(context, active, false),
+                _buildEventList(context, expired, true),
               ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final created = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => CreateOrEditEventScreen()),
-          );
-          if (created == true) setState(() {});
-        },
-        child: const Icon(Icons.add),
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final created = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => CreateOrEditEventScreen()),
+            );
+            if (created == true) setState(() {});
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -174,169 +171,168 @@ class _CreateOrEditEventScreenState extends State<CreateOrEditEventScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.event == null ? 'Create Event' : 'Edit Event', style: const TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Center(
+      body: Form(
+        key: _formKey,
         child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[100]!),
                 ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Event Title',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.title),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Fill in all the fields below to create a new event. Make sure to select the correct batch, date, and time. Tap "Create" when you are done.',
+                        style: TextStyle(color: Colors.blue[800], fontSize: 14),
+                      ),
                     ),
-                    validator: (v) => v == null || v.isEmpty ? 'Enter title' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.description),
-                    ),
-                    maxLines: 2,
-                    validator: (v) => v == null || v.isEmpty ? 'Enter description' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Batch number dropdown
-                  _isBatchLoading
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: CircularProgressIndicator()),
+                  ],
+                ),
+              ),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Event Title',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => v == null || v.isEmpty ? 'Enter title' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                validator: (v) => v == null || v.isEmpty ? 'Enter description' : null,
+              ),
+              const SizedBox(height: 16),
+              // Batch number dropdown
+              _isBatchLoading
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : _batchNumbers.isNotEmpty
+                      ? DropdownButtonFormField<String>(
+                          value: _batchController.text.isNotEmpty && _batchNumbers.contains(_batchController.text)
+                              ? _batchController.text
+                              : null,
+                          items: _batchNumbers
+                              .map((batch) => DropdownMenuItem<String>(
+                                    value: batch,
+                                    child: Text(batch),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            _batchController.text = val ?? '';
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Student Batch No',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Select batch no' : null,
                         )
-                      : _batchNumbers.isNotEmpty
-                          ? DropdownButtonFormField<String>(
-                              value: _batchController.text.isNotEmpty && _batchNumbers.contains(_batchController.text)
-                                  ? _batchController.text
-                                  : null,
-                              items: _batchNumbers
-                                  .map((batch) => DropdownMenuItem<String>(
-                                        value: batch,
-                                        child: Text(batch),
-                                      ))
-                                  .toList(),
-                                                            onChanged: (val) {
-                                _batchController.text = val ?? '';
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'Student Batch No',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.group),
-                              ),
-                              validator: (v) => v == null || v.isEmpty ? 'Select batch no' : null,
-                            )
-                          : TextFormField(
-                              controller: _batchController,
-                              decoration: const InputDecoration(
-                                labelText: 'Student Batch No',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.group),
-                              ),
-                              validator: (v) => v == null || v.isEmpty ? 'Enter batch no' : null,
-                            ),
-                  const SizedBox(height: 16),
-                  // Efficient date and time pickers
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.calendar_today, color: Colors.grey),
-                          label: Text(_date == null ? 'Pick Date' : _date!.toLocal().toString().split(' ')[0], style: const TextStyle(color: Colors.black)),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: Colors.grey),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      : TextFormField(
+                          controller: _batchController,
+                          decoration: const InputDecoration(
+                            labelText: 'Student Batch No',
+                            border: OutlineInputBorder(),
                           ),
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _date ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2100),
-                            );
-                            if (picked != null) setState(() => _date = picked);
-                          },
+                          validator: (v) => v == null || v.isEmpty ? 'Enter batch no' : null,
                         ),
+              const SizedBox(height: 16),
+              // Efficient date and time pickers
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      child: Text(_date == null ? 'Pick Date' : _date!.toLocal().toString().split(' ')[0], style: const TextStyle(color: Colors.black)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Colors.grey),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.access_time, color: Colors.grey),
-                          label: Text(_startTime == null ? 'Start Time' : _startTime!.format(context), style: const TextStyle(color: Colors.black)),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: Colors.grey),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () async {
-                            final picked = await showTimePicker(
-                              context: context,
-                              initialTime: _startTime ?? TimeOfDay.now(),
-                            );
-                            if (picked != null) setState(() => _startTime = picked);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.access_time, color: Colors.grey),
-                          label: Text(_endTime == null ? 'End Time' : _endTime!.format(context), style: const TextStyle(color: Colors.black)),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: Colors.grey),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () async {
-                            final picked = await showTimePicker(
-                              context: context,
-                              initialTime: _endTime ?? TimeOfDay.now(),
-                            );
-                            if (picked != null) setState(() => _endTime = picked);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _date ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) setState(() => _date = picked);
+                      },
                     ),
-                    onPressed: _isSaving ? null : _saveEvent,
-                    child: Text(widget.event == null ? 'Create' : 'Update'),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      child: Text(_startTime == null ? 'Start Time' : _startTime!.format(context), style: const TextStyle(color: Colors.black)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Colors.grey),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: _startTime ?? TimeOfDay.now(),
+                        );
+                        if (picked != null) setState(() => _startTime = picked);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      child: Text(_endTime == null ? 'End Time' : _endTime!.format(context), style: const TextStyle(color: Colors.black)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Colors.grey),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: _endTime ?? TimeOfDay.now(),
+                        );
+                        if (picked != null) setState(() => _endTime = picked);
+                      },
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                onPressed: _isSaving ? null : _saveEvent,
+                child: Text(widget.event == null ? 'Create' : 'Update'),
+              ),
+            ],
           ),
         ),
       ),
@@ -382,7 +378,7 @@ class AdminEventInfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Event Info', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -455,21 +451,39 @@ class AdminEventInfoScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isExpired ? Colors.red.withOpacity(0.15) : Colors.blue.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isExpired ? 'EXPIRED' : 'ACTIVE',
-                          style: TextStyle(
-                            color: isExpired ? Colors.red : Colors.blue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      isExpired
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'EXPIRED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'ACTIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -503,8 +517,18 @@ class AdminEventInfoScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.timer, size: 18, color: Colors.grey),
-                      const SizedBox(width: 6),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.timer, size: 28, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       Text('Time left: ', style: TextStyle(fontWeight: FontWeight.bold)),
                       Text(timeLeft, style: TextStyle(color: isExpired ? Colors.red : Colors.blue)),
                     ],

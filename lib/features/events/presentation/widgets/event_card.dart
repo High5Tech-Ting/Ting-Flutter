@@ -14,7 +14,7 @@ class EventCard extends StatelessWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 3,
-      color: expired ? Colors.red.shade50 : Colors.blue.shade50,
+      // Removed background color for both active and expired cards
       child: ListTile(
         onTap: onTap,
         leading: Icon(
