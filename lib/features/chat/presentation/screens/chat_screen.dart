@@ -505,7 +505,12 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage: NetworkImage(widget.avatarUrl),
+              backgroundImage: widget.avatarUrl.isNotEmpty
+                  ? NetworkImage(widget.avatarUrl)
+                  : NetworkImage(
+                      "https://avatar.iran.liara.run/public/?username=${widget.userName}",
+                    ),
+              backgroundColor: Colors.grey[300],
             ),
             const SizedBox(width: 8),
             Column(

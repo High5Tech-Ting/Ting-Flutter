@@ -36,7 +36,11 @@ class ChatListItem extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundImage: NetworkImage(avatarUrl),
+                  backgroundImage: avatarUrl.isNotEmpty
+                      ? NetworkImage(avatarUrl)
+                      : NetworkImage(
+                          "https://avatar.iran.liara.run/public/?username=$userName",
+                        ),
                   backgroundColor: Colors.grey.shade300,
                 ),
                 if (isOnline)

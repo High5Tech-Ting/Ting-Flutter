@@ -14,6 +14,11 @@ class AdminService {
     return currentUser?.uid == adminUserId;
   }
   
+  /// Check if a specific user ID is admin
+  static bool isAdmin(String userId) {
+    return userId == adminUserId;
+  }
+  
   /// Get all users for assignment dropdown
   static Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
