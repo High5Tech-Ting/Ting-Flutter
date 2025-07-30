@@ -31,12 +31,13 @@ class UserInfoScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                    backgroundImage:
+                        (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
                         ? NetworkImage(user.avatarUrl!)
                         : NetworkImage(
                             "https://avatar.iran.liara.run/public/?username=${user.displayName}",
                           ),
-                    backgroundColor: _getUserTypeColor(user.userType ?? 'student'),
+                    backgroundColor: _getUserTypeColor(user.userType),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -48,9 +49,12 @@ class UserInfoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getUserTypeColor(user.userType ?? 'student'),
+                      color: _getUserTypeColor(user.userType),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -64,25 +68,29 @@ class UserInfoScreen extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // User Details Section
             _buildSectionTitle('Personal Information'),
             const SizedBox(height: 16),
-            
+
             _buildInfoCard([
               _buildInfoRow(Icons.email, 'Email', user.email),
               ..._buildUserSpecificFields(),
-              _buildInfoRow(Icons.person, 'User Type', _getUserTypeDisplayName(user.userType)),
+              _buildInfoRow(
+                Icons.person,
+                'User Type',
+                _getUserTypeDisplayName(user.userType),
+              ),
             ]),
-            
+
             const SizedBox(height: 24),
-            
+
             // Account Status Section
             _buildSectionTitle('Account Status'),
             const SizedBox(height: 16),
-            
+
             _buildInfoCard([
               _buildInfoRow(
                 user.online ? Icons.circle : Icons.circle_outlined,
@@ -98,7 +106,7 @@ class UserInfoScreen extends StatelessWidget {
                 ),
               _buildInfoRow(Icons.account_circle, 'User ID', user.uid),
             ]),
-            
+
             const SizedBox(height: 32),
           ],
         ),
@@ -120,29 +128,26 @@ class UserInfoScreen extends StatelessWidget {
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {Color? statusColor}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? statusColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: statusColor ?? AppTheme.primary,
-            size: 20,
-          ),
+          Icon(icon, color: statusColor ?? AppTheme.primary, size: 20),
           const SizedBox(width: 16),
           Expanded(
             flex: 2,
@@ -177,14 +182,20 @@ class UserInfoScreen extends StatelessWidget {
           return [
             _buildInfoRow(Icons.badge, 'Student ID', student.studentId),
             _buildInfoRow(
-              Icons.group, 
-              'Batch Number', 
-              student.batchNo.startsWith('Batch') ? student.batchNo : 'Batch ${student.batchNo}'
+              Icons.group,
+              'Batch Number',
+              student.batchNo.startsWith('Batch')
+                  ? student.batchNo
+                  : 'Batch ${student.batchNo}',
             ),
             if (student.course != null && student.course!.isNotEmpty)
               _buildInfoRow(Icons.school, 'Course', student.course!),
             if (student.academicYear != null)
-              _buildInfoRow(Icons.calendar_today, 'Academic Year', student.academicYear.toString()),
+              _buildInfoRow(
+                Icons.calendar_today,
+                'Academic Year',
+                student.academicYear.toString(),
+              ),
           ];
         }
         break;
@@ -195,8 +206,13 @@ class UserInfoScreen extends StatelessWidget {
             _buildInfoRow(Icons.badge, 'Lecturer ID', lecturer.lecturerId),
             if (lecturer.department != null && lecturer.department!.isNotEmpty)
               _buildInfoRow(Icons.business, 'Department', lecturer.department!),
-            if (lecturer.qualification != null && lecturer.qualification!.isNotEmpty)
-              _buildInfoRow(Icons.verified, 'Qualification', lecturer.qualification!),
+            if (lecturer.qualification != null &&
+                lecturer.qualification!.isNotEmpty)
+              _buildInfoRow(
+                Icons.verified,
+                'Qualification',
+                lecturer.qualification!,
+              ),
             if (lecturer.modules.isNotEmpty)
               _buildInfoRow(Icons.book, 'Modules', lecturer.modules.join(', ')),
           ];
@@ -207,11 +223,19 @@ class UserInfoScreen extends StatelessWidget {
           final staff = user as Staff;
           return [
             _buildInfoRow(Icons.badge, 'Staff ID', staff.staffId),
-            _buildInfoRow(Icons.business, 'Department', staff.department.displayName),
+            _buildInfoRow(
+              Icons.business,
+              'Department',
+              staff.department.displayName,
+            ),
             if (staff.position != null && staff.position!.isNotEmpty)
               _buildInfoRow(Icons.work, 'Position', staff.position!),
             if (staff.supervisor != null && staff.supervisor!.isNotEmpty)
-              _buildInfoRow(Icons.supervisor_account, 'Supervisor', staff.supervisor!),
+              _buildInfoRow(
+                Icons.supervisor_account,
+                'Supervisor',
+                staff.supervisor!,
+              ),
           ];
         }
         break;
