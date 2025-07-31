@@ -71,18 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 batchNo: batchNo ?? 'Not Available',
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profile'),
-              onTap: () {},
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Settings'),
-              onTap: () {},
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            ),
+            
             ListTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text('Appoinments'),
