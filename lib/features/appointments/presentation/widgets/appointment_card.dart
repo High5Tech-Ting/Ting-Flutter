@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ting/core/models/appointment_model.dart';
 import 'package:ting/core/models/user_model.dart';
 import 'package:ting/core/services/appointment_service.dart';
-import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/core/services/user_service.dart';
 import 'package:intl/intl.dart';
 
@@ -34,13 +33,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
       final profilePictureUrl = await UserService.getProfilePictureUrl(
         widget.appointment.userId,
       );
-      
+
       // Priority: uploaded profile picture -> avatarUrl -> fallback
       String? finalAvatarUrl = profilePictureUrl;
       if (finalAvatarUrl == null || finalAvatarUrl.isEmpty) {
         finalAvatarUrl = user?.avatarUrl;
       }
-      
+
       setState(() {
         profileImageUrl = finalAvatarUrl;
         userName = user?.displayName ?? 'User';
@@ -57,9 +56,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = AdminService.isCurrentUserAdmin()
-        ? AdminService.adminUserId
-        : AppointmentService.currentUserId;
+    final currentUserId = AppointmentService.currentUserId;
 
     final isMyAppointment = widget.appointment.userId == currentUserId;
     final isForMe = widget.appointment.lecturerId == currentUserId;
@@ -98,11 +95,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                         spacing: 4.0,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
+                          Icon(Icons.access_time, size: 14, color: Colors.grey),
                           Text(
                             '${DateFormat('MMM dd').format(widget.appointment.appointmentDate)} • ${widget.appointment.timeSlot}',
                             style: TextStyle(
@@ -144,41 +137,28 @@ class _AppointmentCardState extends State<AppointmentCard> {
             if (widget.appointment.location.isNotEmpty)
               Row(
                 children: [
-                  Icon(
-                    Icons.location_on,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
+                  Icon(Icons.location_on, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       widget.appointment.location,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-            if (widget.appointment.lecturerName != null && widget.appointment.lecturerName!.isNotEmpty)
+            if (widget.appointment.lecturerName != null &&
+                widget.appointment.lecturerName!.isNotEmpty)
               Row(
                 children: [
-                  Icon(
-                    Icons.person_2,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
+                  Icon(Icons.person_2, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       'Lecturer: ${widget.appointment.lecturerName!}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -300,9 +280,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                 Navigator.of(context).pop();
                 _deleteAppointment();
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Delete'),
             ),
           ],
@@ -313,8 +291,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
 
   Future<void> _deleteAppointment() async {
     try {
-      await AppointmentService.deleteAppointment(widget.appointment.appointmentId);
-      
+      await AppointmentService.deleteAppointment(
+        widget.appointment.appointmentId,
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

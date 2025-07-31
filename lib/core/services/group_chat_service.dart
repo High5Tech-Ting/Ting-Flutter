@@ -173,6 +173,7 @@ class GroupChatService implements BaseMessageService {
         memberIds: memberIds,
         messageText: lastMessagePreview,
         senderEmail: currentUser.email ?? 'Unknown',
+        senderName: currentUser.displayName ?? 'Unknown',
       );
     }
   }
@@ -389,6 +390,7 @@ class GroupChatService implements BaseMessageService {
     required List<String> memberIds,
     required String messageText,
     required String senderEmail,
+    required String senderName,
   }) async {
     for (String memberId in memberIds) {
       if (memberId != currentUserId) {
@@ -396,7 +398,8 @@ class GroupChatService implements BaseMessageService {
           await NotificationService.instance.sendMessageNotification(
             receiverId: memberId,
             messageText: messageText,
-            senderEmail: '$senderEmail (in $groupName)',
+            senderEmail: '$senderEmail ',
+            senderName: '$groupName • $senderName',
           );
         } catch (e) {
           print('Error sending notification to $memberId: $e');

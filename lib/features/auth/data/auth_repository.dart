@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/features/auth/presentation/widgets/auth_wrapper.dart';
 
 class AuthRepository {
@@ -13,10 +14,17 @@ class AuthRepository {
       email: email,
       password: password,
     );
+
+    // Initialize admin service after successful sign in
+    await AdminService.initialize();
+
     return userCredential.user;
   }
 
   static Future<void> signOut(BuildContext context) async {
+    // Clear admin service cache before signing out
+    AdminService.clearCache();
+
     await _firebaseAuth.signOut();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const AuthWrapper()),

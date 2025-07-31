@@ -287,6 +287,7 @@ class _ChatScreenState extends State<ChatScreen> {
           receiverId: receiverId,
           messageText: lastMessagePreview,
           senderEmail: currentUser.email!,
+          senderName: currentUser.displayName ?? 'Unknown',
         );
       }
 

@@ -7,6 +7,7 @@ class ProfileHeader extends StatelessWidget {
   final String userEmail;
   final String studentId;
   final String batchNo;
+  final String? userType;
 
   const ProfileHeader({
     super.key,
@@ -14,6 +15,7 @@ class ProfileHeader extends StatelessWidget {
     required this.userEmail,
     required this.studentId,
     required this.batchNo,
+    this.userType,
   });
 
   @override
@@ -44,17 +46,19 @@ class ProfileHeader extends StatelessWidget {
             userEmail,
             style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
-          // TODO Student ID and Batch No
-          const SizedBox(height: 4),
-          Text(
-            "Student ID: $studentId",
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Batch No: $batchNo",
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
+          // Student ID and Batch No - only show for students
+          if (userType?.toLowerCase() == 'student') ...[
+            const SizedBox(height: 4),
+            Text(
+              "Student ID: $studentId",
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Batch No: $batchNo",
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ],
         ],
       ),
     );

@@ -153,6 +153,7 @@ class NotificationService {
     required String receiverId,
     required String messageText,
     required String senderEmail,
+    required String senderName,
   }) async {
     try {
       DocumentSnapshot receiverDoc = await _firestore
@@ -168,7 +169,7 @@ class NotificationService {
           await _firestore.collection('notifications').add({
             'receiverId': receiverId,
             'fcmToken': fcmToken,
-            'title': 'New message from $senderEmail',
+            'title': senderName,
             'body': messageText,
             'senderEmail': senderEmail,
             'timestamp': FieldValue.serverTimestamp(),

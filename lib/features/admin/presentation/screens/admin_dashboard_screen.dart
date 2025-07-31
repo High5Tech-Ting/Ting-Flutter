@@ -30,9 +30,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     super.dispose();
   }
 
-  void _checkAdminAccess() {
+  void _checkAdminAccess() async {
     final user = _auth.currentUser;
-    if (user == null || !AdminService.isAdmin(user.uid)) {
+    if (user == null) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Access denied. Please sign in.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final isAdmin = await AdminService.isAdminAsync(user.uid);
+    if (!isAdmin) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -49,10 +61,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       appBar: AppBar(
         title: const Text(
           'Admin Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blue,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -62,18 +71,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(
-              icon: Icon(Icons.school),
-              text: 'Students',
-            ),
-            Tab(
-              icon: Icon(Icons.person_2),
-              text: 'Lecturers',
-            ),
-            Tab(
-              icon: Icon(Icons.work),
-              text: 'Staff',
-            ),
+            Tab(icon: Icon(Icons.school), text: 'Students'),
+            Tab(icon: Icon(Icons.person_2), text: 'Lecturers'),
+            Tab(icon: Icon(Icons.work), text: 'Staff'),
           ],
         ),
       ),
@@ -90,9 +90,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
+              decoration: BoxDecoration(color: Colors.blue),
               child: Text(
                 'Admin Menu',
                 style: TextStyle(

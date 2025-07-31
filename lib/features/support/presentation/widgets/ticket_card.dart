@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ting/core/models/support_ticket_model.dart';
 import 'package:ting/core/models/user_model.dart';
 import 'package:ting/core/services/support_ticket_service.dart';
-import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/core/services/user_service.dart';
 import 'package:intl/intl.dart';
 
@@ -34,13 +33,13 @@ class _TicketCardState extends State<TicketCard> {
       final profilePictureUrl = await UserService.getProfilePictureUrl(
         widget.ticket.userId,
       );
-      
+
       // Priority: uploaded profile picture -> avatarUrl -> fallback
       String? finalAvatarUrl = profilePictureUrl;
       if (finalAvatarUrl == null || finalAvatarUrl.isEmpty) {
         finalAvatarUrl = user?.avatarUrl;
       }
-      
+
       setState(() {
         profileImageUrl = finalAvatarUrl;
         userName = user?.displayName ?? 'User';
@@ -57,9 +56,7 @@ class _TicketCardState extends State<TicketCard> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = AdminService.isCurrentUserAdmin()
-        ? AdminService.adminUserId
-        : SupportTicketService.currentUserId;
+    final currentUserId = SupportTicketService.currentUserId;
 
     final isAssignedToMe = widget.ticket.assignedTo == currentUserId;
     final isMyTicket = widget.ticket.userId == currentUserId;

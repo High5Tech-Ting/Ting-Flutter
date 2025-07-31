@@ -24,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? studentId;
   String? displayName;
   String? batchNo;
+  String? userType;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -48,6 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             studentId = userData?['studentId'] as String?;
             displayName = userData?['displayName'] as String?;
             batchNo = userData?['batchNo'] as String?;
+            userType = userData?['userType'] as String?;
           });
         }
       } catch (e) {
@@ -69,19 +71,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 userEmail: user?.email ?? 'Email',
                 studentId: studentId ?? 'Not Available',
                 batchNo: batchNo ?? 'Not Available',
+                userType: userType,
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profile'),
-              onTap: () {},
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Settings'),
-              onTap: () {},
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today),

@@ -294,6 +294,7 @@ class BroadcastService {
         receiverId: receiverId,
         messageText: lastMessagePreview,
         senderEmail: currentUser.email ?? 'Unknown',
+        senderName: currentUser.displayName ?? 'Unknown',
       );
     } catch (e) {
       print('Error sending notification to $receiverId: $e');
