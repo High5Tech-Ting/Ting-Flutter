@@ -9,6 +9,7 @@ import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
 import 'package:ting/features/events/presentation/screens/student_events_screen.dart';
 import 'package:ting/features/events/presentation/screens/admin_events_screen.dart';
+import 'package:ting/features/widgets/widget_management_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,6 +21,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   User? user;
   String? studentId;
+  String? displayName;
+  String? batchNo;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -42,6 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final userData = userDoc.data();
           setState(() {
             studentId = userData?['studentId'] as String?;
+            displayName = userData?['displayName'] as String?;
+            batchNo = userData?['batchNo'] as String?;
           });
         }
       } catch (e) {
@@ -59,10 +64,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ClipPath(
               clipper: CustomClipPath(),
               child: ProfileHeader(
-                userName: user?.displayName ?? 'User Name',
+                userName: displayName ?? 'User Name',
                 userEmail: user?.email ?? 'Email',
                 studentId: studentId ?? 'Not Available',
-                batchNo: 'Batch 2023',
+                batchNo: batchNo ?? 'Not Available',
               ),
             ),
             ListTile(
@@ -104,7 +109,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => StudentEventsScreen(batchNo: 'Batch 2023'),
+                      builder: (context) =>
+                          StudentEventsScreen(batchNo: 'Batch 2023'),
+                    ),
+                  );
+                },
+                trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              ),
+            if (!AdminService.isAdmin(user?.uid ?? ''))
+              ListTile(
+                leading: const Icon(Icons.widgets_outlined),
+                title: const Text('Widget Management'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const WidgetManagementScreen(),
                     ),
                   );
                 },

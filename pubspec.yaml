@@ -54,6 +54,8 @@ dependencies:
   open_file: ^3.3.2
   animated_icon: ^0.0.9
   home_widget: ^0.8.0
+  shared_preferences: ^2.5.3
+  workmanager: ^0.8.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

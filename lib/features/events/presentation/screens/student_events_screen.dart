@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ting/core/services/event_service.dart';
 import 'package:ting/core/models/event_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ting/features/events/presentation/widgets/event_card.dart';
-import 'package:ting/shared/theme.dart';
+import 'package:ting/shared/widgets/primary_button.dart';
+import 'package:ting/services/widget_service.dart';
 
 class StudentEventsScreen extends StatelessWidget {
   final String batchNo;
@@ -40,8 +40,12 @@ class StudentEventsScreen extends StatelessWidget {
             }
             final events = snapshot.data ?? [];
             final now = DateTime.now();
-            final active = events.where((e) => now.isBefore(e.endTime)).toList();
-            final expired = events.where((e) => now.isAfter(e.endTime)).toList();
+            final active = events
+                .where((e) => now.isBefore(e.endTime))
+                .toList();
+            final expired = events
+                .where((e) => now.isAfter(e.endTime))
+                .toList();
             return TabBarView(
               children: [
                 _buildEventList(context, active, false),
@@ -54,9 +58,15 @@ class StudentEventsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEventList(BuildContext context, List<EventModel> events, bool expired) {
+  Widget _buildEventList(
+    BuildContext context,
+    List<EventModel> events,
+    bool expired,
+  ) {
     if (events.isEmpty) {
-      return Center(child: Text(expired ? 'No expired events.' : 'No active events.'));
+      return Center(
+        child: Text(expired ? 'No expired events.' : 'No active events.'),
+      );
     }
     return ListView.builder(
       itemCount: events.length,
@@ -87,11 +97,49 @@ class StudentEventInfoScreen extends StatelessWidget {
   final EventModel event;
   const StudentEventInfoScreen({super.key, required this.event});
 
+  Future<void> _addEventToHomeScreen(BuildContext context) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Set the event in the widget service
+      await WidgetService.setCurrentEvent(event);
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Event added to home screen widget successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog if open
+      Navigator.of(context).pop();
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add event to widget: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final isExpired = now.isAfter(event.endTime);
-    final timeLeft = isExpired ? 'Expired' : _formatDuration(event.endTime.difference(now));
+    final timeLeft = isExpired
+        ? 'Expired'
+        : _formatDuration(event.endTime.difference(now));
     return Scaffold(
       appBar: AppBar(
         title: const Text('Event Info', style: TextStyle(color: Colors.white)),
@@ -136,7 +184,10 @@ class StudentEventInfoScreen extends StatelessWidget {
                       ),
                       isExpired
                           ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.red,
                                 borderRadius: BorderRadius.circular(12),
@@ -145,14 +196,17 @@ class StudentEventInfoScreen extends StatelessWidget {
                                 'EXPIRED',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
                                 ),
                               ),
                             )
                           : Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.blue,
                                 borderRadius: BorderRadius.circular(12),
@@ -161,7 +215,7 @@ class StudentEventInfoScreen extends StatelessWidget {
                                 'ACTIVE',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
                                 ),
@@ -169,43 +223,73 @@ class StudentEventInfoScreen extends StatelessWidget {
                             ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Text(event.description, style: const TextStyle(fontSize: 15)),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-                      const SizedBox(width: 6),
-                      Text('Date: ${event.date.toLocal().toString().split(' ')[0]}'),
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Date: ${event.date.toLocal().toString().split(' ')[0]}',
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 18, color: Colors.grey),
-                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.access_time,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
                       Text('Start: ${_formatTime(event.startTime)}'),
                       const SizedBox(width: 12),
                       Text('End: ${_formatTime(event.endTime)}'),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.group, size: 18, color: Colors.grey),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text('Batch: ${event.batchNo}'),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       const Icon(Icons.timer, size: 18, color: Colors.grey),
-                      const SizedBox(width: 6),
-                      Text('Time left: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(timeLeft, style: TextStyle(color: isExpired ? Colors.red : Colors.blue)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Time left: ',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        timeLeft,
+                        style: TextStyle(
+                          color: isExpired ? Colors.red : Colors.blue,
+                        ),
+                      ),
                     ],
                   ),
+                  if (!isExpired) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: PrimaryButton(
+                        onPressed: () async {
+                          await _addEventToHomeScreen(context);
+                        },
+                        child: const Text('Add event to home screen'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
