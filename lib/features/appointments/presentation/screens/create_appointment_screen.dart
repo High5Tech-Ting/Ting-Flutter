@@ -11,7 +11,8 @@ class CreateAppointmentScreen extends StatefulWidget {
   const CreateAppointmentScreen({super.key});
 
   @override
-  State<CreateAppointmentScreen> createState() => _CreateAppointmentScreenState();
+  State<CreateAppointmentScreen> createState() =>
+      _CreateAppointmentScreenState();
 }
 
 class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
@@ -81,9 +82,9 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
         _isLoadingLecturers = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading lecturers: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading lecturers: $e')));
       }
     }
   }
@@ -127,8 +128,9 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
 
     // Check if current user is a lecturer (lecturers don't need to select another lecturer)
     bool isLecturer = _currentUser?.userType == 'lecturer';
-    
-    if (!isLecturer && (_selectedLecturerId == null || _selectedLecturerName == null)) {
+
+    if (!isLecturer &&
+        (_selectedLecturerId == null || _selectedLecturerName == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a lecturer'),
@@ -243,153 +245,7 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
                 },
                 maxLength: 500,
               ),
-              const SizedBox(height: 16),
 
-              // Lecturer selection (only for non-lecturers)
-              if (!isLecturer) ...[
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Select Lecturer',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (_isLoadingLecturers)
-                          const Center(child: CircularProgressIndicator())
-                        else
-                          DropdownButtonFormField<String>(
-                            value: _selectedLecturerId,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'Choose a lecturer',
-                            ),
-                            items: _lecturers.map((lecturer) {
-                              return DropdownMenuItem<String>(
-                                value: lecturer['uid'],
-                                child: Text(
-                                  '${lecturer['displayName']} (${lecturer['lecturerId']})',
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedLecturerId = value;
-                                _selectedLecturerName = _lecturers
-                                    .firstWhere((lecturer) => lecturer['uid'] == value)['displayName'];
-                              });
-                            },
-                            validator: (value) {
-                              if (!isLecturer && value == null) {
-                                return 'Please select a lecturer';
-                              }
-                              return null;
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Date selection
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Appointment Date',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      InkWell(
-                        onTap: () => _selectDate(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.calendar_today),
-                              const SizedBox(width: 12),
-                              Text(
-                                _selectedDate == null
-                                    ? 'Select appointment date'
-                                    : DateFormat('EEEE, MMM d, yyyy').format(_selectedDate!),
-                                style: TextStyle(
-                                  color: _selectedDate == null ? Colors.grey[600] : Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Time slot selection
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Time Slot',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: _selectedTimeSlot,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Select time slot',
-                        ),
-                        items: _timeSlots.map((timeSlot) {
-                          return DropdownMenuItem<String>(
-                            value: timeSlot,
-                            child: Text(timeSlot),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedTimeSlot = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Please select a time slot';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               const SizedBox(height: 16),
 
               // Location field
@@ -408,6 +264,139 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
                 },
                 maxLength: 100,
               ),
+
+              const SizedBox(height: 16),
+
+              // Lecturer selection (only for non-lecturers)
+              if (!isLecturer) ...[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Select Lecturer',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_isLoadingLecturers)
+                      const Center(child: CircularProgressIndicator())
+                    else
+                      DropdownButtonFormField<String>(
+                        value: _selectedLecturerId,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Choose a lecturer',
+                        ),
+                        items: _lecturers.map((lecturer) {
+                          return DropdownMenuItem<String>(
+                            value: lecturer['uid'],
+                            child: Text(
+                              '${lecturer['displayName']} (${lecturer['lecturerId']})',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedLecturerId = value;
+                            _selectedLecturerName = _lecturers.firstWhere(
+                              (lecturer) => lecturer['uid'] == value,
+                            )['displayName'];
+                          });
+                        },
+                        validator: (value) {
+                          if (!isLecturer && value == null) {
+                            return 'Please select a lecturer';
+                          }
+                          return null;
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Date selection
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Appointment Date',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () => _selectDate(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today),
+                          const SizedBox(width: 12),
+                          Text(
+                            _selectedDate == null
+                                ? 'Select appointment date'
+                                : DateFormat(
+                                    'EEEE, MMM d, yyyy',
+                                  ).format(_selectedDate!),
+                            style: TextStyle(
+                              color: _selectedDate == null
+                                  ? Colors.grey[600]
+                                  : Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Time slot selection
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Time Slot',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedTimeSlot,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Select time slot',
+                    ),
+                    items: _timeSlots.map((timeSlot) {
+                      return DropdownMenuItem<String>(
+                        value: timeSlot,
+                        child: Text(timeSlot),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedTimeSlot = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select a time slot';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 24),
 
               // Submit button
