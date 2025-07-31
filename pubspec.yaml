@@ -53,6 +53,7 @@ dependencies:
   device_info_plus: ^9.1.2
   open_file: ^3.3.2
   animated_icon: ^0.0.9
+  calendar_view: ^1.4.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -4,9 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
 import 'package:ting/features/support/presentation/screens/support_tickets_screen.dart';
+import 'package:ting/features/appointments/presentation/screens/appointments_screen.dart';
 import 'package:ting/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:ting/core/services/admin_service.dart';
 import 'package:ting/shared/widgets/custom_clip_path.dart';
+import 'package:ting/features/events/presentation/screens/student_events_screen.dart';
+import 'package:ting/features/events/presentation/screens/admin_events_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -77,8 +80,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today),
-              title: const Text('Calendar'),
-              onTap: () {},
+              title: const Text('Appoinments'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AppointmentsScreen(),
+                  ),
+                );
+              },
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
             ListTile(
@@ -94,6 +104,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
             ),
+            if (!AdminService.isAdmin(user?.uid ?? ''))
+              ListTile(
+                leading: const Icon(Icons.event),
+                title: const Text('Events'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentEventsScreen(batchNo: 'Batch 2023'),
+                    ),
+                  );
+                },
+                trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              ),
+            if (AdminService.isAdmin(user?.uid ?? ''))
+              ListTile(
+                leading: const Icon(Icons.event),
+                title: const Text('Manage Events'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminEventsScreen(),
+                    ),
+                  );
+                },
+                trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              ),
             if (AdminService.isAdmin(user?.uid ?? ''))
               ListTile(
                 leading: const Icon(Icons.admin_panel_settings_outlined),

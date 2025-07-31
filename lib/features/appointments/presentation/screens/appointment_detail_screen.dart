@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:ting/core/models/support_ticket_model.dart';
-import 'package:ting/core/services/support_ticket_service.dart';
-import 'package:ting/core/services/admin_service.dart';
-import 'package:ting/features/support/presentation/widgets/assignee_section.dart';
-import 'package:ting/features/support/presentation/widgets/status_update_widget.dart';
+import 'package:ting/core/models/appointment_model.dart';
+import 'package:ting/core/services/appointment_service.dart';
+import 'package:ting/features/appointments/presentation/widgets/appointment_status_update_widget.dart';
 import 'package:ting/shared/theme.dart';
 import 'package:intl/intl.dart';
 
-class TicketDetailScreen extends StatefulWidget {
-  final String ticketId;
+class AppointmentDetailScreen extends StatefulWidget {
+  final String appointmentId;
 
-  const TicketDetailScreen({super.key, required this.ticketId});
+  const AppointmentDetailScreen({super.key, required this.appointmentId});
 
   @override
-  State<TicketDetailScreen> createState() => _TicketDetailScreenState();
+  State<AppointmentDetailScreen> createState() => _AppointmentDetailScreenState();
 }
 
-class _TicketDetailScreenState extends State<TicketDetailScreen> {
+class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   final _messageController = TextEditingController();
-  SupportTicket? _ticket;
+  Appointment? _appointment;
   bool _isLoading = true;
   bool _isSendingMessage = false;
 
   @override
   void initState() {
     super.initState();
-    _loadTicket();
+    _loadAppointment();
   }
 
   @override
@@ -35,11 +32,11 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     super.dispose();
   }
 
-  Future<void> _loadTicket() async {
+  Future<void> _loadAppointment() async {
     try {
-      final ticket = await SupportTicketService.getTicketById(widget.ticketId);
+      final appointment = await AppointmentService.getAppointmentById(widget.appointmentId);
       setState(() {
-        _ticket = ticket;
+        _appointment = appointment;
         _isLoading = false;
       });
     } catch (e) {
@@ -48,7 +45,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading ticket: $e')),
+          SnackBar(content: Text('Error loading appointment: $e')),
         );
       }
     }
@@ -62,8 +59,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     });
 
     try {
-      await SupportTicketService.addTicketMessage(
-        ticketId: widget.ticketId,
+      await AppointmentService.addAppointmentMessage(
+        appointmentId: widget.appointmentId,
         message: _messageController.text.trim(),
       );
 
@@ -112,11 +109,11 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       );
     }
 
-    if (_ticket == null) {
+    if (_appointment == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text(
-            'Ticket Not Found',
+            'Appointment Not Found',
             style: TextStyle(color: Colors.white),
           ),
           backgroundColor: AppTheme.primary,
@@ -124,7 +121,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(
-          child: Text('Ticket not found or you don\'t have permission to view it'),
+          child: Text('Appointment not found or you don\'t have permission to view it'),
         ),
       );
     }
@@ -132,23 +129,30 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Ticket #${_ticket!.ticketId.substring(0, 8)}',
+          'Appointment #${_appointment!.appointmentId.substring(0, 8)}',
           style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          if (AppointmentService.canDeleteAppointment(_appointment!))
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _showDeleteConfirmation(context),
+            ),
+        ],
       ),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
-            // Main scrollable content area - including ticket header
+            // Main scrollable content area - including appointment header
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Ticket info header - now scrollable
+                    // Appointment info header - now scrollable
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -165,7 +169,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  _ticket!.title,
+                                  _appointment!.title,
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -175,11 +179,11 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(_ticket!.status),
+                                  color: _getStatusColor(_appointment!.status),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  _ticket!.status.name.toUpperCase(),
+                                  _appointment!.status.name.toUpperCase(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -191,77 +195,55 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Created: ${DateFormat('MMM dd, yyyy HH:mm').format(_ticket!.createdAt.toDate())}',
+                            'Created: ${DateFormat('MMM dd, yyyy HH:mm').format(_appointment!.createdAt.toDate())}',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 12,
                             ),
                           ),
-                          if (_ticket!.updatedAt != null)
+                          if (_appointment!.updatedAt != null)
                             Text(
-                              'Last updated: ${DateFormat('MMM dd, yyyy HH:mm').format(_ticket!.updatedAt!.toDate())}',
+                              'Last updated: ${DateFormat('MMM dd, yyyy HH:mm').format(_appointment!.updatedAt!.toDate())}',
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 12,
                               ),
                             ),
                           const SizedBox(height: 12),
+                          
+                          // Appointment details
+                          _buildDetailRow(Icons.calendar_today, 'Date', 
+                              DateFormat('EEEE, MMM d, yyyy').format(_appointment!.appointmentDate)),
+                          _buildDetailRow(Icons.access_time, 'Time', _appointment!.timeSlot),
+                          _buildDetailRow(Icons.location_on, 'Location', _appointment!.location),
+                          if (_appointment!.lecturerName != null && _appointment!.lecturerName!.isNotEmpty)
+                            _buildDetailRow(Icons.person_2, 'Lecturer', _appointment!.lecturerName!),
+                          
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Description:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
                           Text(
-                            _ticket!.description,
+                            _appointment!.description,
                             style: const TextStyle(fontSize: 14),
                           ),
-                          if (_ticket!.imageUrl != null) ...[
-                            const SizedBox(height: 12),
-                            GestureDetector(
-                              onTap: () => _showImageDialog(_ticket!.imageUrl!),
-                              child: Container(
-                                height: 200,
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey[300]!),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    _ticket!.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(child: CircularProgressIndicator());
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Center(
-                                        child: Icon(Icons.error, color: Colors.red),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
-
-                    // Assignee section - only show if ticket is actually assigned OR if admin wants to assign
-                    if (_ticket!.assignedTo != null || AdminService.isCurrentUserAdmin())
-                      AssigneeSection(
-                        ticket: _ticket!,
-                        onAssigned: () => _loadTicket(),
-                      ),
-
-                    // Status update widget - only for admin or assigned user
-                    if (AdminService.isCurrentUserAdmin() || 
-                        _ticket!.assignedTo == FirebaseAuth.instance.currentUser?.uid)
-                      StatusUpdateWidget(
-                        ticket: _ticket!,
-                        onStatusUpdated: () => _loadTicket(),
-                      ),
-
+                    
+                    // Status update widget for lecturers and admins
+                    AppointmentStatusUpdateWidget(
+                      appointment: _appointment!,
+                      onStatusUpdated: () {
+                        _loadAppointment(); // Refresh appointment data
+                      },
+                    ),
+                    
                     // Messages section
-                    StreamBuilder<List<TicketMessage>>(
-                      stream: SupportTicketService.getTicketMessages(widget.ticketId),
+                    StreamBuilder<List<AppointmentMessage>>(
+                      stream: AppointmentService.getAppointmentMessages(widget.appointmentId),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Padding(
@@ -308,7 +290,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             ),
 
             // Message input - Fixed at bottom
-            if (_ticket!.status != TicketStatus.closed)
+            if (_appointment!.status != AppointmentStatus.done)
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -358,81 +340,117 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     );
   }
 
-  void _showImageDialog(String imageUrl) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBar(
-              title: const Text('Image'),
-              automaticallyImplyLeading: false,
-              actions: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: TextStyle(fontWeight: FontWeight.w500, color: Colors.grey[700]),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
             ),
-            Expanded(
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(Icons.error, color: Colors.red, size: 50),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Color _getStatusColor(TicketStatus status) {
+  Color _getStatusColor(AppointmentStatus status) {
     switch (status) {
-      case TicketStatus.pending:
+      case AppointmentStatus.pending:
         return Colors.orange;
-      case TicketStatus.resolved:
+      case AppointmentStatus.booked:
         return Colors.green;
-      case TicketStatus.closed:
-        return Colors.red;
+      case AppointmentStatus.done:
+        return Colors.blue;
+    }
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Appointment'),
+          content: const Text(
+            'Are you sure you want to delete this appointment? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteAppointment();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAppointment() async {
+    try {
+      await AppointmentService.deleteAppointment(widget.appointmentId);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(); // Go back to previous screen
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting appointment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
 
 class _MessageBubble extends StatelessWidget {
-  final TicketMessage message;
+  final AppointmentMessage message;
 
   const _MessageBubble({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    final isFromSupport = message.isFromAdmin;
-    
-    // Determine if this message is from an admin or assigned user
-    final bool isActualAdmin = message.senderId == "i14bEX30GkT509oJz0pggxsRcs62";
+    final isFromLecturer = message.isFromLecturer;
     
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: isFromSupport 
+        mainAxisAlignment: isFromLecturer 
             ? MainAxisAlignment.start 
             : MainAxisAlignment.end,
         children: [
-          if (isFromSupport) ...[
+          if (isFromLecturer) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: isActualAdmin ? Colors.red : Colors.blue,
-              child: Icon(
-                isActualAdmin ? Icons.support_agent : Icons.person_pin,
+              backgroundColor: Colors.green,
+              child: const Icon(
+                Icons.person_2,
                 size: 16,
                 color: Colors.white,
               ),
@@ -443,25 +461,25 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isFromSupport ? Colors.grey[200] : AppTheme.primary,
+                color: isFromLecturer ? Colors.grey[200] : AppTheme.primary,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isFromSupport)
+                  if (isFromLecturer)
                     Text(
-                      isActualAdmin ? 'Support Team' : 'Support Assistant',
+                      'Lecturer',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isActualAdmin ? Colors.red[800] : Colors.blue[800],
+                        color: Colors.green[800],
                       ),
                     ),
                   Text(
                     message.message,
                     style: TextStyle(
-                      color: isFromSupport ? Colors.black : Colors.white,
+                      color: isFromLecturer ? Colors.black : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -469,14 +487,14 @@ class _MessageBubble extends StatelessWidget {
                     DateFormat('MMM dd, HH:mm').format(message.createdAt.toDate()),
                     style: TextStyle(
                       fontSize: 10,
-                      color: isFromSupport ? Colors.grey[500] : Colors.white70,
+                      color: isFromLecturer ? Colors.grey[500] : Colors.white70,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          if (!isFromSupport) ...[
+          if (!isFromLecturer) ...[
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
