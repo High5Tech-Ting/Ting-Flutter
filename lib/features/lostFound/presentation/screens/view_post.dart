@@ -4,8 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:ting/shared/theme.dart';
-import 'package:ting/features/forum/presentation/widgets/comment_input.dart';
-import 'package:ting/features/forum/presentation/widgets/comment_list.dart';
+import 'package:ting/features/lostFound/presentation/widgets/comment_input.dart';
+import 'package:ting/features/lostFound/presentation/widgets/comment_list.dart';
+import 'package:ting/features/chat/presentation/screens/chat_screen.dart';
 
 class ViewPost extends StatefulWidget {
   final String postId;
@@ -25,11 +26,6 @@ class _ViewPostState extends State<ViewPost> {
   String _errorMessage = '';
   Map<String, dynamic>? _postData;
 
-  // Post interaction states
-  bool _hasLiked = false;
-  bool _hasDisliked = false;
-  bool _isProcessing = false;
-
   @override
   void initState() {
     super.initState();
@@ -44,7 +40,7 @@ class _ViewPostState extends State<ViewPost> {
 
     try {
       final postDoc = await _firestore
-          .collection('forum_posts')
+          .collection('lost_found_items')
           .doc(widget.postId)
           .get();
 
@@ -59,17 +55,9 @@ class _ViewPostState extends State<ViewPost> {
 
       final data = postDoc.data() as Map<String, dynamic>;
 
-      // Check user interactions
-      final currentUserId = _auth.currentUser?.uid;
-      final List<dynamic> likedBy = data['likedBy'] ?? [];
-      final List<dynamic> dislikedBy = data['dislikedBy'] ?? [];
-
       setState(() {
         _postData = data;
         _postData!['id'] = widget.postId;
-        _hasLiked = currentUserId != null && likedBy.contains(currentUserId);
-        _hasDisliked =
-            currentUserId != null && dislikedBy.contains(currentUserId);
         _isLoading = false;
       });
     } catch (e) {
@@ -101,146 +89,6 @@ class _ViewPostState extends State<ViewPost> {
     }
   }
 
-  Future<void> _handleLike() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must be logged in to like posts')),
-      );
-      return;
-    }
-
-    if (_isProcessing) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    try {
-      final postRef = _firestore.collection('forum_posts').doc(widget.postId);
-
-      if (_hasLiked) {
-        // User is unliking the post
-        await postRef.update({
-          'likes': FieldValue.increment(-1),
-          'likedBy': FieldValue.arrayRemove([currentUser.uid]),
-        });
-
-        setState(() {
-          _postData!['likes'] = (_postData!['likes'] ?? 1) - 1;
-          _hasLiked = false;
-        });
-      } else {
-        // User is liking the post
-        final batch = _firestore.batch();
-
-        // First, remove from disliked if necessary
-        if (_hasDisliked) {
-          batch.update(postRef, {
-            'dislikes': FieldValue.increment(-1),
-            'dislikedBy': FieldValue.arrayRemove([currentUser.uid]),
-          });
-
-          setState(() {
-            _postData!['dislikes'] = (_postData!['dislikes'] ?? 1) - 1;
-            _hasDisliked = false;
-          });
-        }
-
-        // Then add to likes
-        batch.update(postRef, {
-          'likes': FieldValue.increment(1),
-          'likedBy': FieldValue.arrayUnion([currentUser.uid]),
-        });
-
-        await batch.commit();
-
-        setState(() {
-          _postData!['likes'] = (_postData!['likes'] ?? 0) + 1;
-          _hasLiked = true;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
-    }
-  }
-
-  Future<void> _handleDislike() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must be logged in to dislike posts')),
-      );
-      return;
-    }
-
-    if (_isProcessing) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    try {
-      final postRef = _firestore.collection('forum_posts').doc(widget.postId);
-
-      if (_hasDisliked) {
-        // User is removing their dislike
-        await postRef.update({
-          'dislikes': FieldValue.increment(-1),
-          'dislikedBy': FieldValue.arrayRemove([currentUser.uid]),
-        });
-
-        setState(() {
-          _postData!['dislikes'] = (_postData!['dislikes'] ?? 1) - 1;
-          _hasDisliked = false;
-        });
-      } else {
-        // User is disliking the post
-        final batch = _firestore.batch();
-
-        // First, remove from liked if necessary
-        if (_hasLiked) {
-          batch.update(postRef, {
-            'likes': FieldValue.increment(-1),
-            'likedBy': FieldValue.arrayRemove([currentUser.uid]),
-          });
-
-          setState(() {
-            _postData!['likes'] = (_postData!['likes'] ?? 1) - 1;
-            _hasLiked = false;
-          });
-        }
-
-        // Then add to dislikes
-        batch.update(postRef, {
-          'dislikes': FieldValue.increment(1),
-          'dislikedBy': FieldValue.arrayUnion([currentUser.uid]),
-        });
-
-        await batch.commit();
-
-        setState(() {
-          _postData!['dislikes'] = (_postData!['dislikes'] ?? 0) + 1;
-          _hasDisliked = true;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
-    }
-  }
-
   void _showFullScreenImage(BuildContext context, String imageUrl) {
     Navigator.push(
       context,
@@ -248,6 +96,75 @@ class _ViewPostState extends State<ViewPost> {
         builder: (context) => FullScreenImageView(imageUrl: imageUrl),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    return status == 'resolved' ? Colors.green : Colors.orange;
+  }
+
+  IconData _getTypeIcon(String type) {
+    return type == 'lost' ? Icons.search : Icons.check_circle;
+  }
+
+  Color _getTypeColor(String type) {
+    return type == 'lost' ? Colors.red : Colors.blue;
+  }
+
+  void _contactUser() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to contact users')),
+      );
+      return;
+    }
+
+    try {
+      final postOwnerId = _postData!['userId'];
+      final userName = _postData!['userName'] ?? 'Anonymous';
+      final userPhotoUrl = _postData!['userPhotoUrl'] ?? '';
+
+      // Navigate to chat screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            userName: userName,
+            lastActiveTime: 'Online',
+            avatarUrl: userPhotoUrl,
+            isOnline: true,
+            otherUserId: postOwnerId,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error starting chat: $e')));
+    }
+  }
+
+  void _togglePostStatus() async {
+    try {
+      final currentStatus = _postData!['status'] ?? 'open';
+      final newStatus = currentStatus == 'open' ? 'resolved' : 'open';
+
+      await _firestore.collection('lost_found_items').doc(widget.postId).update(
+        {'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()},
+      );
+
+      setState(() {
+        _postData!['status'] = newStatus;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Post marked as ${newStatus}')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error updating status: $e')));
+    }
   }
 
   @override
@@ -285,10 +202,13 @@ class _ViewPostState extends State<ViewPost> {
     final String? userPhotoUrl = post['userPhotoUrl'];
     final String? postText = post['text'];
     final String? imageUrl = post['imageUrl'];
-    final int likes = post['likes'] ?? 0;
-    final int dislikes = post['dislikes'] ?? 0;
     final int comments = post['comments'] ?? 0;
     final Timestamp? timestamp = post['createdAt'];
+    final String status = post['status'] ?? 'open';
+    final String type = post['type'] ?? 'lost';
+    final String postOwnerId = post['userId'] ?? '';
+    final String currentUserId = _auth.currentUser?.uid ?? '';
+    final bool isOwner = currentUserId == postOwnerId;
 
     return Scaffold(
       appBar: AppBar(
@@ -328,24 +248,92 @@ class _ViewPostState extends State<ViewPost> {
                               : null,
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    userName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getTypeColor(
+                                        type,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _getTypeColor(type),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          _getTypeIcon(type),
+                                          size: 12,
+                                          color: _getTypeColor(type),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          type.toUpperCase(),
+                                          style: TextStyle(
+                                            color: _getTypeColor(type),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            Text(
-                              _formatTimeAgo(timestamp),
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    _formatTimeAgo(timestamp),
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(
+                                        status,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      status.toUpperCase(),
+                                      style: TextStyle(
+                                        color: _getStatusColor(status),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -415,30 +403,32 @@ class _ViewPostState extends State<ViewPost> {
                       ),
                     ),
 
-                  // Post actions (like, dislike, share)
+                  // Post actions
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildActionButton(
-                          icon: _hasLiked
-                              ? Icons.thumb_up
-                              : Icons.thumb_up_alt_outlined,
-                          label: '$likes',
-                          color: _hasLiked
-                              ? AppTheme.primary
-                              : Colors.grey[700],
-                          onPressed: _handleLike,
-                        ),
-                        _buildActionButton(
-                          icon: _hasDisliked
-                              ? Icons.thumb_down
-                              : Icons.thumb_down_alt_outlined,
-                          label: '$dislikes',
-                          color: _hasDisliked ? Colors.red : Colors.grey[700],
-                          onPressed: _handleDislike,
-                        ),
+                        if (!isOwner)
+                          _buildActionButton(
+                            icon: Icons.message_outlined,
+                            label: 'Contact',
+                            color: AppTheme.primary,
+                            onPressed: _contactUser,
+                          ),
+                        if (isOwner)
+                          _buildActionButton(
+                            icon: status == 'open'
+                                ? Icons.check
+                                : Icons.refresh,
+                            label: status == 'open'
+                                ? 'Mark Resolved'
+                                : 'Reopen',
+                            color: status == 'open'
+                                ? Colors.green
+                                : Colors.orange,
+                            onPressed: _togglePostStatus,
+                          ),
                       ],
                     ),
                   ),
@@ -480,15 +470,25 @@ class _ViewPostState extends State<ViewPost> {
   }) {
     return InkWell(
       onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: color?.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color ?? Colors.grey, width: 1),
+        ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 4),
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -524,6 +524,18 @@ class _ViewPostState extends State<ViewPost> {
                   onTap: () {
                     Navigator.pop(context);
                     _confirmDeletePost(context);
+                  },
+                ),
+              ] else ...[
+                ListTile(
+                  leading: const Icon(Icons.message, color: AppTheme.primary),
+                  title: const Text(
+                    'Contact User',
+                    style: TextStyle(color: AppTheme.primary),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _contactUser();
                   },
                 ),
               ],
@@ -574,7 +586,10 @@ class _ViewPostState extends State<ViewPost> {
     }
 
     try {
-      await _firestore.collection('forum_posts').doc(widget.postId).delete();
+      await _firestore
+          .collection('lost_found_items')
+          .doc(widget.postId)
+          .delete();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Post deleted successfully')),
       );

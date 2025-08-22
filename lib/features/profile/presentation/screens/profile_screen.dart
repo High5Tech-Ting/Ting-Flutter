@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:ting/features/auth/data/auth_repository.dart';
+import 'package:ting/features/lostFound/presentation/screens/lost_found_screen.dart';
 import 'package:ting/features/profile/presentation/widgets/profile_header.dart';
 import 'package:ting/features/support/presentation/screens/support_tickets_screen.dart';
 import 'package:ting/features/appointments/presentation/screens/appointments_screen.dart';
@@ -157,6 +159,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
                 trailing: Icon(Icons.arrow_forward_ios, size: 16),
               ),
+            ListTile(
+              leading: const HugeIcon(
+                icon: HugeIcons.strokeRoundedLuggage02,
+                color: Colors.black,
+              ),
+              title: const Text('Lost and Found'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LostFoundScreen(),
+                  ),
+                );
+              },
+              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+            ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),

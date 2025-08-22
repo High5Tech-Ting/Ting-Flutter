@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:ting/features/forum/presentation/screens/view_post.dart';
+import 'package:ting/features/chat/presentation/screens/chat_screen.dart';
 import 'package:ting/shared/theme.dart';
 
 class ForumPost extends StatefulWidget {
@@ -374,7 +375,6 @@ class _ForumPostState extends State<ForumPost> {
             ),
           ),
 
-          // Post actions (like, dislike, comment, share)
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -399,6 +399,14 @@ class _ForumPostState extends State<ForumPost> {
                 color: Colors.grey[700],
                 onPressed: () {
                   _showComments(context);
+                },
+              ),
+              _buildActionButton(
+                icon: Icons.message_outlined,
+                label: 'Message',
+                color: AppTheme.primary,
+                onPressed: () {
+                  _messageUser(context);
                 },
               ),
             ],
@@ -460,6 +468,18 @@ class _ForumPostState extends State<ForumPost> {
                   onTap: () {
                     Navigator.pop(context);
                     _confirmDeletePost(context);
+                  },
+                ),
+              ] else ...[
+                ListTile(
+                  leading: const Icon(Icons.message, color: AppTheme.primary),
+                  title: const Text(
+                    'Message User',
+                    style: TextStyle(color: AppTheme.primary),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _messageUser(context);
                   },
                 ),
               ],
@@ -542,6 +562,56 @@ class _ForumPostState extends State<ForumPost> {
         );
       },
     );
+  }
+
+  void _messageUser(BuildContext context) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to message users')),
+      );
+      return;
+    }
+
+    // Don't allow messaging yourself
+    if (currentUser.uid == widget.userId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot message yourself')),
+      );
+      return;
+    }
+
+    try {
+      // Get the user data for the post owner
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(widget.userId)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        final userName = userData['displayName'] ?? widget.userName;
+        final userPhotoUrl = userData['photoURL'] ?? widget.userPhotoUrl ?? '';
+
+        // Navigate to chat screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              userName: userName,
+              lastActiveTime: 'Online',
+              avatarUrl: userPhotoUrl,
+              isOnline: true,
+              otherUserId: widget.userId,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error starting chat: $e')));
+    }
   }
 }
 
